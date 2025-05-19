@@ -22,10 +22,30 @@ public interface LeavesCustomPayload<B extends FriendlyByteBuf> extends CustomPa
     @interface Codec {
     }
 
+    void encode(B buf);
+
     interface Game extends LeavesCustomPayload<RegistryFriendlyByteBuf> {
+        default void encode(RegistryFriendlyByteBuf buf) {
+            var location = LeavesProtocolManager.IDS.get(this.getClass());
+            var codec = LeavesProtocolManager.CODECS_GAME.get(this.getClass());
+            if (location == null || codec == null) {
+                throw new IllegalArgumentException("Payload " + this.getClass() + " is not configured correctly");
+            }
+            buf.writeResourceLocation(location);
+            codec.encode(buf, this);
+        }
     }
 
     interface Config extends LeavesCustomPayload<FriendlyByteBuf> {
+        default void encode(FriendlyByteBuf buf) {
+            var location = LeavesProtocolManager.IDS.get(this.getClass());
+            var codec = LeavesProtocolManager.CODECS_CONFIG.get(this.getClass());
+            if (location == null || codec == null) {
+                throw new IllegalArgumentException("Payload " + this.getClass() + " is not configured correctly");
+            }
+            buf.writeResourceLocation(location);
+            codec.encode(buf, this);
+        }
     }
 
     @Override

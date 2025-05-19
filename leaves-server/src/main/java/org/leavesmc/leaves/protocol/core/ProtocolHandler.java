@@ -1,5 +1,7 @@
 package org.leavesmc.leaves.protocol.core;
 
+import net.minecraft.network.RegistryFriendlyByteBuf;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -15,7 +17,7 @@ public class ProtocolHandler {
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
     public @interface PayloadReceiver {
-        Class<? extends LeavesCustomPayload<?>> payload();
+        Class<? extends LeavesCustomPayload<? super RegistryFriendlyByteBuf>> payload();
     }
 
     @Target(ElementType.METHOD)

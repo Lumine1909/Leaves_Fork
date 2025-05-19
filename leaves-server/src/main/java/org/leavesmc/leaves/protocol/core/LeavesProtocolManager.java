@@ -40,10 +40,12 @@ public class LeavesProtocolManager {
 
     private static final Map<LeavesProtocol, List<InvokerHolder<?>>> REGISTERED_PROTOCOLS = new HashMap<>();
 
-    private static final Map<Class<? extends LeavesCustomPayload<?>>, InvokerHolder<ProtocolHandler.PayloadReceiver>> PAYLOAD_RECEIVERS = new HashMap<>();
-    private static final Map<Class<? extends LeavesCustomPayload<?>>, ResourceLocation> IDS = new HashMap<>();
-    private static final Map<Class<? extends LeavesCustomPayload<?>>, StreamCodec<? extends FriendlyByteBuf, LeavesCustomPayload<?>>> CODECS = new HashMap<>();
-    private static final Map<ResourceLocation, Pair<Class<? extends LeavesCustomPayload<?>>, StreamCodec<? extends FriendlyByteBuf, LeavesCustomPayload<?>>>> ID2CODEC = new HashMap<>();
+    private static final Map<Class<? extends LeavesCustomPayload<? super RegistryFriendlyByteBuf>>, InvokerHolder<ProtocolHandler.PayloadReceiver>> PAYLOAD_RECEIVERS = new HashMap<>();
+    public static final Map<Class<? extends LeavesCustomPayload<? super RegistryFriendlyByteBuf>>, ResourceLocation> IDS = new HashMap<>();
+    public static final Map<Class<? extends LeavesCustomPayload<RegistryFriendlyByteBuf>>, StreamCodec<RegistryFriendlyByteBuf, LeavesCustomPayload<RegistryFriendlyByteBuf>>> CODECS_GAME = new HashMap<>();
+    public static final Map<Class<? extends LeavesCustomPayload<FriendlyByteBuf>>, StreamCodec<FriendlyByteBuf, LeavesCustomPayload<FriendlyByteBuf>>> CODECS_CONFIG = new HashMap<>();
+    public static final Map<ResourceLocation, StreamCodec<RegistryFriendlyByteBuf, LeavesCustomPayload<RegistryFriendlyByteBuf>>> ID2CODEC_GAME = new HashMap<>();
+    public static final Map<ResourceLocation, StreamCodec<FriendlyByteBuf, LeavesCustomPayload<FriendlyByteBuf>>> ID2CODEC_CONFIG = new HashMap<>();
 
     private static final Map<String, InvokerHolder<ProtocolHandler.BytebufReceiver>> STRICT_BYTEBUF_RECEIVERS = new HashMap<>();
     private static final Map<String, InvokerHolder<ProtocolHandler.BytebufReceiver>> NAMESPACED_BYTEBUF_RECEIVERS = new HashMap<>();
@@ -71,11 +73,16 @@ public class LeavesProtocolManager {
                     try {
                         final LeavesCustomPayload.ID id = field.getAnnotation(LeavesCustomPayload.ID.class);
                         if (id != null && field.getType() == ResourceLocation.class) {
-                            IDS.put((Class<? extends LeavesCustomPayload<?>>) clazz, (ResourceLocation) field.get(null));
+                            IDS.put((Class<? extends LeavesCustomPayload<? super RegistryFriendlyByteBuf>>) clazz, (ResourceLocation) field.get(null));
                         }
                         final LeavesCustomPayload.Codec codec = field.getAnnotation(LeavesCustomPayload.Codec.class);
                         if (codec != null && field.getType() == StreamCodec.class) {
-                            CODECS.put((Class<? extends LeavesCustomPayload<?>>) clazz, (StreamCodec<? extends FriendlyByteBuf, LeavesCustomPayload<?>>) field.get(null));
+                            if (clazz.isAssignableFrom(LeavesCustomPayload.Config.class)) {
+                                CODECS_CONFIG.put((Class<? extends LeavesCustomPayload<FriendlyByteBuf>>) clazz, (StreamCodec<FriendlyByteBuf, LeavesCustomPayload<FriendlyByteBuf>>) field.get(null));
+                            }
+                            if (clazz.isAssignableFrom(LeavesCustomPayload.Game.class)) {
+                                CODECS_GAME.put((Class<? extends LeavesCustomPayload<RegistryFriendlyByteBuf>>) clazz, (StreamCodec<RegistryFriendlyByteBuf, LeavesCustomPayload<RegistryFriendlyByteBuf>>) field.get(null));
+                            }
                         }
                     } catch (Exception e) {
                         throw new RuntimeException(e);
@@ -207,36 +214,35 @@ public class LeavesProtocolManager {
             }
         }
         for (var idInfo : IDS.entrySet()) {
-            var codec = CODECS.get(idInfo.getKey());
-            if (codec == null) {
-
-                throw new IllegalArgumentException("Payload " + idInfo.getKey() + " is not configured correctly");
+            var codecConfig = CODECS_CONFIG.get(idInfo.getKey());
+            if (codecConfig != null) {
+                ID2CODEC_CONFIG.put(idInfo.getValue(), codecConfig);
             }
-            ID2CODEC.put(idInfo.getValue(), Pair.of(idInfo.getKey(), codec));
+            var codecGame = CODECS_GAME.get(idInfo.getKey());
+            if (codecConfig != null) {
+                ID2CODEC_GAME.put(idInfo.getValue(), codecGame);
+            }
         }
     }
 
-    public static <T extends FriendlyByteBuf> LeavesCustomPayload<T> decode(ResourceLocation location, T buf) {
-        var codec = ID2CODEC.get(location);
-        if (codec == null) {
-            return null;
-        }
-        if (buf instanceof RegistryFriendlyByteBuf buf1 && codec.getLeft().isAssignableFrom(LeavesCustomPayload.Game.class)) {
-            return codec.getRight().decode(buf1);
+    public static LeavesCustomPayload<? extends FriendlyByteBuf> decode(ResourceLocation location, FriendlyByteBuf buf) {
+        if (buf instanceof RegistryFriendlyByteBuf registry) {
+            var codec = ID2CODEC_GAME.get(location);
+            if (codec == null) {
+                return null;
+            }
+            return codec.decode(registry);
         } else {
-            return codec.getRight().decode(buf);
+            var codec = ID2CODEC_CONFIG.get(location);
+            if (codec == null) {
+                return null;
+            }
+            return codec.decode(buf);
         }
-        return null;
     }
 
     public static <T extends FriendlyByteBuf> void encode(T buf, LeavesCustomPayload<T> payload) {
-        var location = IDS.get(payload.getClass());
-        var codec = CODECS.get(payload.getClass());
-        if (location == null || codec == null) {
-            throw new IllegalArgumentException("Payload " + payload.getClass() + " is not configured correctly");
-        }
-        buf.writeResourceLocation(location);
-        codec.encode(buf, payload);
+        payload.encode(buf);
     }
 
     public static void handlePayload(ServerPlayer player, LeavesCustomPayload<?> payload) {

@@ -8,7 +8,7 @@ import org.leavesmc.leaves.protocol.core.LeavesCustomPayload;
 import org.leavesmc.leaves.protocol.core.ProtocolHandler;
 import org.leavesmc.leaves.protocol.jade.JadeProtocol;
 
-public record ClientHandshakePayload(String protocolVersion) implements LeavesCustomPayload<ClientHandshakePayload> {
+public record ClientHandshakePayload(String protocolVersion) implements LeavesCustomPayload.Game {
 
     @ProtocolHandler.ID
     private static final ResourceLocation PACKET_CLIENT_HANDSHAKE = JadeProtocol.id("client_handshake");
