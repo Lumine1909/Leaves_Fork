@@ -30,11 +30,11 @@ import java.util.stream.Collectors;
 
 public class LeavesMinecraftSessionService extends PaperMinecraftSessionService {
 
+    private static List<URL> extraYggdrasilList = List.of();
+
     protected LeavesMinecraftSessionService(ServicesKeySet keySet, Proxy authenticationService, Environment environment) {
         super(keySet, authenticationService, environment);
     }
-
-    private static List<URL> extraYggdrasilList = List.of();
 
     public static void initExtraYggdrasilList(List<String> extraYggdrasilServiceList) {
         List<URL> list = new ArrayList<>();

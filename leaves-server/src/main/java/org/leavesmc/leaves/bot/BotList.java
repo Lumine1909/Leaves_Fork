@@ -39,13 +39,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class BotList {
 
-    public static BotList INSTANCE;
-
     private static final Logger LOGGER = LogUtils.getLogger();
-
-    private final MinecraftServer server;
-
+    public static BotList INSTANCE;
     public final List<ServerBot> bots = new CopyOnWriteArrayList<>();
+    private final MinecraftServer server;
     private final BotDataStorage dataStorage;
 
     private final Map<UUID, ServerBot> botsByUUID = Maps.newHashMap();

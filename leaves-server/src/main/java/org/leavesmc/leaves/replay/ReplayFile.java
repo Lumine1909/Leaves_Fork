@@ -86,6 +86,27 @@ public class ReplayFile {
         );
     }
 
+    private static boolean deleteDir(File dir) {
+        if (dir == null || !dir.exists()) {
+            return false;
+        }
+
+        File[] files = dir.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    deleteDir(file);
+                } else {
+                    if (!file.delete()) {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return dir.delete();
+    }
+
     @SuppressWarnings({"rawtypes", "unchecked"})
     private byte @NotNull [] getPacketBytes(Packet packet, ConnectionProtocol state) {
         ProtocolInfo<?> protocol = this.protocols.get(state);
@@ -183,26 +204,5 @@ public class ReplayFile {
             out.write(buffer, 0, len);
         }
         in.close();
-    }
-
-    private static boolean deleteDir(File dir) {
-        if (dir == null || !dir.exists()) {
-            return false;
-        }
-
-        File[] files = dir.listFiles();
-        if (files != null) {
-            for (File file : files) {
-                if (file.isDirectory()) {
-                    deleteDir(file);
-                } else {
-                    if (!file.delete()) {
-                        return false;
-                    }
-                }
-            }
-        }
-
-        return dir.delete();
     }
 }

@@ -27,14 +27,12 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class ServerPhotographer extends ServerPlayer {
 
     private static final List<ServerPhotographer> photographers = new CopyOnWriteArrayList<>();
-
+    private final ServerStatsCounter stats;
     public PhotographerCreateState createState;
     private ServerPlayer followPlayer;
     private Recorder recorder;
     private File saveFile;
     private Vec3 lastPos;
-
-    private final ServerStatsCounter stats;
 
     private ServerPhotographer(MinecraftServer server, ServerLevel world, GameProfile profile) {
         super(server, world, profile, ClientInformation.createDefault());
@@ -70,6 +68,36 @@ public class ServerPhotographer extends ServerPlayer {
         // TODO record distance
 
         return photographer;
+    }
+
+    public static ServerPhotographer getPhotographer(String id) {
+        for (ServerPhotographer photographer : photographers) {
+            if (photographer.createState.id.equals(id)) {
+                return photographer;
+            }
+        }
+        return null;
+    }
+
+    public static ServerPhotographer getPhotographer(UUID uuid) {
+        for (ServerPhotographer photographer : photographers) {
+            if (photographer.getUUID().equals(uuid)) {
+                return photographer;
+            }
+        }
+        return null;
+    }
+
+    public static List<ServerPhotographer> getPhotographers() {
+        return photographers;
+    }
+
+    public static boolean isCreateLegal(@NotNull String name) {
+        if (!name.matches("^[a-zA-Z0-9_]{4,16}$")) {
+            return false;
+        }
+
+        return Bukkit.getPlayerExact(name) == null && ServerPhotographer.getPhotographer(name) == null;
     }
 
     @Override
@@ -158,28 +186,6 @@ public class ServerPhotographer extends ServerPlayer {
         this.recorder.resumeRecording();
     }
 
-    public static ServerPhotographer getPhotographer(String id) {
-        for (ServerPhotographer photographer : photographers) {
-            if (photographer.createState.id.equals(id)) {
-                return photographer;
-            }
-        }
-        return null;
-    }
-
-    public static ServerPhotographer getPhotographer(UUID uuid) {
-        for (ServerPhotographer photographer : photographers) {
-            if (photographer.getUUID().equals(uuid)) {
-                return photographer;
-            }
-        }
-        return null;
-    }
-
-    public static List<ServerPhotographer> getPhotographers() {
-        return photographers;
-    }
-
     public Photographer getBukkitPlayer() {
         return getBukkitEntity();
     }
@@ -190,19 +196,11 @@ public class ServerPhotographer extends ServerPlayer {
         return (CraftPhotographer) super.getBukkitEntity();
     }
 
-    public static boolean isCreateLegal(@NotNull String name) {
-        if (!name.matches("^[a-zA-Z0-9_]{4,16}$")) {
-            return false;
-        }
-
-        return Bukkit.getPlayerExact(name) == null && ServerPhotographer.getPhotographer(name) == null;
-    }
-
     public static class PhotographerCreateState {
 
+        public final String id;
         public RecorderOption option;
         public Location loc;
-        public final String id;
 
         public PhotographerCreateState(Location loc, String id, RecorderOption option) {
             this.loc = loc;

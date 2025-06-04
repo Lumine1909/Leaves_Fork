@@ -48,9 +48,14 @@ public final class LeavesConfig {
 
     public static final String CONFIG_HEADER = "Configuration file for Leaves.";
     public static final int CURRENT_CONFIG_VERSION = 6;
-
-    private static File configFile;
     public static YamlConfiguration config;
+    public static ModifyConfig modify = new ModifyConfig();
+    public static PerformanceConfig performance = new PerformanceConfig();
+    public static ProtocolConfig protocol = new ProtocolConfig();
+    public static MiscConfig mics = new MiscConfig();
+    public static RegionConfig region = new RegionConfig();
+    public static FixConfig fix = new FixConfig();
+    private static File configFile;
 
     public static void init(final @NotNull File file) {
         LeavesConfig.configFile = file;
@@ -120,12 +125,112 @@ public final class LeavesConfig {
         MinecraftServer.getServer().server.syncCommands();
     }
 
-    public static ModifyConfig modify = new ModifyConfig();
-
     @GlobalConfigCategory("modify")
     public static class ModifyConfig {
 
+        @RemovedConfig(name = "tick-command", category = "modify")
+        @RemovedConfig(name = "player-can-edit-sign", category = "modify")
+        @RemovedConfig(name = "mending-compatibility-infinity", category = {"modify", "minecraft-old"})
+        @RemovedConfig(name = "protection-stacking", category = {"modify", "minecraft-old"})
+        @RemovedConfig(name = "disable-moved-wrongly-threshold", category = "modify")
+        @RemovedConfig(name = "ignore-lc", category = "modify")
+        @RemovedConfig(name = "fix-fortress-mob-spawn", category = {"modify", "minecraft-old"})
+        private final boolean removed = false;
         public FakeplayerConfig fakeplayer = new FakeplayerConfig();
+        public MinecraftOLDConfig oldMC = new MinecraftOLDConfig();
+        public ElytraAeronauticsConfig elytraAeronautics = new ElytraAeronauticsConfig();
+        @RemovedConfig(name = "redstone-shears-wrench", category = {}, transform = true)
+        @GlobalConfig("redstone-shears-wrench")
+        public boolean redstoneShearsWrench = true;
+        @RemovedConfig(name = "budding-amethyst-can-push-by-piston", category = {}, transform = true)
+        @GlobalConfig("budding-amethyst-can-push-by-piston")
+        public boolean buddingAmethystCanPushByPiston = false;
+        @RemovedConfig(name = "spectator-dont-get-advancement", category = {}, transform = true)
+        @GlobalConfig("spectator-dont-get-advancement")
+        public boolean spectatorDontGetAdvancement = false;
+        @RemovedConfig(name = "stick-change-armorstand-arm-status", category = {}, transform = true)
+        @GlobalConfig("stick-change-armorstand-arm-status")
+        public boolean stickChangeArmorStandArmStatus = true;
+        @RemovedConfig(name = "snowball-and-egg-can-knockback-player", category = {}, transform = true)
+        @GlobalConfig("snowball-and-egg-can-knockback-player")
+        public boolean snowballAndEggCanKnockback = true;
+        @GlobalConfig("flatten-triangular-distribution")
+        public boolean flattenTriangularDistribution = false;
+        @GlobalConfig("player-operation-limiter")
+        public boolean playerOperationLimiter = false;
+        @GlobalConfig(value = "renewable-elytra", validator = RenewableElytraValidator.class)
+        public double renewableElytra = -1.0F;
+        public int shulkerBoxStackSize = 1;
+        @GlobalConfig("force-void-trade")
+        public boolean forceVoidTrade = false;
+        @GlobalConfig(value = "mc-technical-survival-mode", validator = McTechnicalModeValidator.class, lock = true)
+        public boolean mcTechnicalMode = true;
+        @GlobalConfig("return-nether-portal-fix")
+        public boolean netherPortalFix = false;
+        @GlobalConfig(value = "use-vanilla-random", lock = true, validator = UseVanillaRandomValidator.class)
+        public boolean useVanillaRandom = false;
+        @GlobalConfig("fix-update-suppression-crash")
+        public boolean updateSuppressionCrashFix = true;
+        @GlobalConfig(value = "bedrock-break-list", lock = true)
+        public boolean bedrockBreakList = false;
+        @GlobalConfig(value = "disable-distance-check-for-use-item", validator = DisableDistanceCheckForUseItemValidator.class)
+        public boolean disableDistanceCheckForUseItem = false;
+        @GlobalConfig("no-feather-falling-trample")
+        public boolean noFeatherFallingTrample = false;
+        @GlobalConfig("shared-villager-discounts")
+        public boolean sharedVillagerDiscounts = false;
+        @GlobalConfig("disable-check-out-of-order-command")
+        public boolean disableCheckOutOfOrderCommand = false;
+        @GlobalConfig("despawn-enderman-with-block")
+        public boolean despawnEndermanWithBlock = false;
+        @GlobalConfig(value = "creative-no-clip", validator = CreativeNoClipValidator.class)
+        public boolean creativeNoClip = false;
+        @GlobalConfig("shave-snow-layers")
+        public boolean shaveSnowLayers = true;
+        @GlobalConfig("disable-packet-limit")
+        public boolean disablePacketLimit = false;
+        @GlobalConfig(value = "lava-riptide", validator = LavaRiptideValidator.class)
+        public boolean lavaRiptide = false;
+        @GlobalConfig(value = "no-block-update-command", validator = NoBlockUpdateValidator.class)
+        public boolean noBlockUpdateCommand = false;
+        @GlobalConfig("no-tnt-place-update")
+        public boolean noTNTPlaceUpdate = false;
+        @GlobalConfig("raider-die-skip-self-raid-check")
+        public boolean skipSelfRaidCheck = false;
+        @GlobalConfig("container-passthrough")
+        public boolean containerPassthrough = false;
+        @GlobalConfig(value = "avoid-anvil-too-expensive", validator = AnvilNotExpensiveValidator.class)
+        public boolean avoidAnvilTooExpensive = false;
+        @GlobalConfig("bow-infinity-fix")
+        public boolean bowInfinityFix = false;
+        @GlobalConfig("hopper-counter")
+        public boolean hopperCounter = false;
+        @GlobalConfig(value = "spider-jockeys-drop-gapples", validator = JockeysDropGAppleValidator.class)
+        public double spiderJockeysDropGapples = -1.0;
+        @GlobalConfig("renewable-deepslate")
+        public boolean renewableDeepslate = false;
+        @GlobalConfig("renewable-sponges")
+        public boolean renewableSponges = false;
+        @GlobalConfig(value = "renewable-coral", validator = RenewableCoralValidator.class)
+        public RenewableCoralType renewableCoral = RenewableCoralType.FALSE;
+        @GlobalConfig("fast-resume")
+        public boolean fastResume = false;
+        public ForcePeacefulModeSwitchConfig peacefulModeSwitch = new ForcePeacefulModeSwitchConfig();
+        @GlobalConfig("disable-vault-blacklist")
+        public boolean disableVaultBlacklist = false;
+        public Predicate<ServerPlayer> fastAbsorbPredicate = player -> false;
+        @GlobalConfig(value = "stackable-shulker-boxes", validator = StackableShulkerValidator.class)
+        private final String stackableShulkerBoxes = "false";
+        @GlobalConfig(value = "exp-orb-absorb-mode", validator = ExpOrbModeValidator.class)
+        private final ExpOrbAbsorbMode expOrbAbsorbMode = ExpOrbAbsorbMode.VANILLA;
+
+        public enum RenewableCoralType {
+            FALSE, TRUE, EXPANDED
+        }
+
+        public enum ExpOrbAbsorbMode {
+            VANILLA, FAST, FAST_CREATIVE
+        }
 
         @GlobalConfigCategory("fakeplayer")
         public static class FakeplayerConfig {
@@ -133,6 +238,37 @@ public final class LeavesConfig {
             @RemovedConfig(name = "enable", category = "fakeplayer", transform = true)
             @GlobalConfig(value = "enable", validator = FakeplayerValidator.class)
             public boolean enable = true;
+            @RemovedConfig(name = "unable-fakeplayer-names", category = "fakeplayer", transform = true)
+            @GlobalConfig(value = "unable-fakeplayer-names")
+            public List<String> unableNames = List.of("player-name");
+            @GlobalConfig(value = "limit")
+            public int limit = 10;
+            @GlobalConfig(value = "prefix")
+            public String prefix = "";
+            @GlobalConfig(value = "suffix")
+            public String suffix = "";
+            @GlobalConfig(value = "regen-amount", validator = RegenAmountValidator.class)
+            public double regenAmount = 0.0;
+            @GlobalConfig("always-send-data")
+            public boolean canSendDataAlways = true;
+            @GlobalConfig("resident-fakeplayer")
+            public boolean canResident = false;
+            @GlobalConfig("open-fakeplayer-inventory")
+            public boolean canOpenInventory = false;
+            @GlobalConfig("skip-sleep-check")
+            public boolean canSkipSleep = false;
+            @GlobalConfig("spawn-phantom")
+            public boolean canSpawnPhantom = false;
+            @GlobalConfig("use-action")
+            public boolean canUseAction = true;
+            @GlobalConfig("modify-config")
+            public boolean canModifyConfig = false;
+            @GlobalConfig("manual-save-and-load")
+            public boolean canManualSaveAndLoad = false;
+            @GlobalConfig(value = "cache-skin", lock = true)
+            public boolean useSkinCache = false;
+            @GlobalConfig(value = "tick-type")
+            public ServerBot.TickType tickType = ServerBot.TickType.NETWORK;
 
             private static class FakeplayerValidator extends BooleanConfigValidator {
                 @Override
@@ -146,22 +282,6 @@ public final class LeavesConfig {
                 }
             }
 
-            @RemovedConfig(name = "unable-fakeplayer-names", category = "fakeplayer", transform = true)
-            @GlobalConfig(value = "unable-fakeplayer-names")
-            public List<String> unableNames = List.of("player-name");
-
-            @GlobalConfig(value = "limit")
-            public int limit = 10;
-
-            @GlobalConfig(value = "prefix")
-            public String prefix = "";
-
-            @GlobalConfig(value = "suffix")
-            public String suffix = "";
-
-            @GlobalConfig(value = "regen-amount", validator = RegenAmountValidator.class)
-            public double regenAmount = 0.0;
-
             private static class RegenAmountValidator extends DoubleConfigValidator {
                 @Override
                 public void verify(Double old, Double value) throws IllegalArgumentException {
@@ -170,44 +290,52 @@ public final class LeavesConfig {
                     }
                 }
             }
-
-            @GlobalConfig("always-send-data")
-            public boolean canSendDataAlways = true;
-
-            @GlobalConfig("resident-fakeplayer")
-            public boolean canResident = false;
-
-            @GlobalConfig("open-fakeplayer-inventory")
-            public boolean canOpenInventory = false;
-
-            @GlobalConfig("skip-sleep-check")
-            public boolean canSkipSleep = false;
-
-            @GlobalConfig("spawn-phantom")
-            public boolean canSpawnPhantom = false;
-
-            @GlobalConfig("use-action")
-            public boolean canUseAction = true;
-
-            @GlobalConfig("modify-config")
-            public boolean canModifyConfig = false;
-
-            @GlobalConfig("manual-save-and-load")
-            public boolean canManualSaveAndLoad = false;
-
-            @GlobalConfig(value = "cache-skin", lock = true)
-            public boolean useSkinCache = false;
-
-            @GlobalConfig(value = "tick-type")
-            public ServerBot.TickType tickType = ServerBot.TickType.NETWORK;
         }
-
-        public MinecraftOLDConfig oldMC = new MinecraftOLDConfig();
 
         @GlobalConfigCategory("minecraft-old")
         public static class MinecraftOLDConfig {
 
             public BlockUpdaterConfig updater = new BlockUpdaterConfig();
+            @RemovedConfig(name = "shears-in-dispenser-can-zero-amount", category = {}, transform = true)
+            @RemovedConfig(name = "shears-in-dispenser-can-zero-amount", category = "modify", transform = true)
+            @GlobalConfig("shears-in-dispenser-can-zero-amount")
+            public boolean shearsInDispenserCanZeroAmount = false;
+            @GlobalConfig("armor-stand-cant-kill-by-mob-projectile")
+            public boolean armorStandCantKillByMobProjectile = false;
+            @GlobalConfig("copper-bulb-1gt-delay")
+            public boolean copperBulb1gt = false;
+            @GlobalConfig("crafter-1gt-delay")
+            public boolean crafter1gt = false;
+            @RemovedConfig(name = "zero-tick-plants", category = "modify", transform = true)
+            @GlobalConfig("zero-tick-plants")
+            public boolean zeroTickPlants = false;
+            @RemovedConfig(name = "loot-world-random", category = {"modify", "minecraft-old"}, transform = true)
+            @GlobalConfig(value = "rng-fishing", lock = true, validator = RNGFishingValidator.class)
+            public boolean rngFishing = false;
+            @GlobalConfig("allow-grindstone-overstacking")
+            public boolean allowGrindstoneOverstacking = false;
+            @GlobalConfig("allow-entity-portal-with-passenger")
+            public boolean allowEntityPortalWithPassenger = true;
+            @GlobalConfig("disable-gateway-portal-entity-ticking")
+            public boolean disableGatewayPortalEntityTicking = false;
+            @GlobalConfig("disable-LivingEntity-ai-step-alive-check")
+            public boolean disableLivingEntityAiStepAliveCheck = false;
+            @GlobalConfig("spawn-invulnerable-time")
+            public boolean spawnInvulnerableTime = false;
+            @GlobalConfig("old-hopper-suck-in-behavior")
+            public boolean oldHopperSuckInBehavior = false;
+            @GlobalConfig("old-nether-portal-collision") // Should remove in 1.21.6
+            public boolean oldNetherPortalCollision = false;
+            @GlobalConfig("old-zombie-piglin-drop")
+            public boolean oldZombiePiglinDrop = false;
+            public RaidConfig raid = new RaidConfig();
+            @GlobalConfig("old-zombie-reinforcement")
+            public boolean oldZombieReinforcement = false;
+            @GlobalConfig("allow-anvil-destroy-item-entities")
+            public boolean allowAnvilDestroyItemEntities = false;
+            public TripwireConfig tripwire = new TripwireConfig();
+            @GlobalConfig(value = "villager-infinite-discounts", validator = VillagerInfiniteDiscountsValidator.class)
+            private final boolean villagerInfiniteDiscounts = false;
 
             @GlobalConfigCategory("block-updater")
             public static class BlockUpdaterConfig {
@@ -235,17 +363,6 @@ public final class LeavesConfig {
                 public boolean oldBlockRemoveBehaviour = false;
             }
 
-            @RemovedConfig(name = "shears-in-dispenser-can-zero-amount", category = {}, transform = true)
-            @RemovedConfig(name = "shears-in-dispenser-can-zero-amount", category = "modify", transform = true)
-            @GlobalConfig("shears-in-dispenser-can-zero-amount")
-            public boolean shearsInDispenserCanZeroAmount = false;
-
-            @GlobalConfig("armor-stand-cant-kill-by-mob-projectile")
-            public boolean armorStandCantKillByMobProjectile = false;
-
-            @GlobalConfig(value = "villager-infinite-discounts", validator = VillagerInfiniteDiscountsValidator.class)
-            private boolean villagerInfiniteDiscounts = false;
-
             private static class VillagerInfiniteDiscountsValidator extends BooleanConfigValidator {
                 @Override
                 public void verify(Boolean old, Boolean value) throws IllegalArgumentException {
@@ -253,52 +370,12 @@ public final class LeavesConfig {
                 }
             }
 
-            @GlobalConfig("copper-bulb-1gt-delay")
-            public boolean copperBulb1gt = false;
-
-            @GlobalConfig("crafter-1gt-delay")
-            public boolean crafter1gt = false;
-
-            @RemovedConfig(name = "zero-tick-plants", category = "modify", transform = true)
-            @GlobalConfig("zero-tick-plants")
-            public boolean zeroTickPlants = false;
-
-            @RemovedConfig(name = "loot-world-random", category = {"modify", "minecraft-old"}, transform = true)
-            @GlobalConfig(value = "rng-fishing", lock = true, validator = RNGFishingValidator.class)
-            public boolean rngFishing = false;
-
             private static class RNGFishingValidator extends BooleanConfigValidator {
                 @Override
                 public void verify(Boolean old, Boolean value) throws IllegalArgumentException {
                     LeavesFeatureSet.register(LeavesFeature.of("rng_fishing", value));
                 }
             }
-
-            @GlobalConfig("allow-grindstone-overstacking")
-            public boolean allowGrindstoneOverstacking = false;
-
-            @GlobalConfig("allow-entity-portal-with-passenger")
-            public boolean allowEntityPortalWithPassenger = true;
-
-            @GlobalConfig("disable-gateway-portal-entity-ticking")
-            public boolean disableGatewayPortalEntityTicking = false;
-
-            @GlobalConfig("disable-LivingEntity-ai-step-alive-check")
-            public boolean disableLivingEntityAiStepAliveCheck = false;
-
-            @GlobalConfig("spawn-invulnerable-time")
-            public boolean spawnInvulnerableTime = false;
-
-            @GlobalConfig("old-hopper-suck-in-behavior")
-            public boolean oldHopperSuckInBehavior = false;
-
-            @GlobalConfig("old-nether-portal-collision") // Should remove in 1.21.6
-            public boolean oldNetherPortalCollision = false;
-
-            @GlobalConfig("old-zombie-piglin-drop")
-            public boolean oldZombiePiglinDrop = false;
-
-            public RaidConfig raid = new RaidConfig();
 
             @GlobalConfigCategory("revert-raid-changes")
             public static class RaidConfig {
@@ -315,14 +392,6 @@ public final class LeavesConfig {
                 public boolean skipHeightCheck = false;
             }
 
-            @GlobalConfig("old-zombie-reinforcement")
-            public boolean oldZombieReinforcement = false;
-
-            @GlobalConfig("allow-anvil-destroy-item-entities")
-            public boolean allowAnvilDestroyItemEntities = false;
-
-            public TripwireConfig tripwire = new TripwireConfig();
-
             @GlobalConfigCategory("tripwire-and-hook-behavior")
             public static class TripwireConfig {
                 @RemovedConfig(name = "string-tripwire-hook-duplicate", category = {"modify", "minecraft-old"}, transform = true)
@@ -338,12 +407,20 @@ public final class LeavesConfig {
             }
         }
 
-        public ElytraAeronauticsConfig elytraAeronautics = new ElytraAeronauticsConfig();
-
         @GlobalConfigCategory("elytra-aeronautics")
         public static class ElytraAeronauticsConfig {
             @GlobalConfig(value = "no-chunk-load", validator = ElytraNoChunkLoadValidator.class)
             public boolean noChunk = false;
+            @GlobalConfig(value = "no-chunk-height")
+            public double noChunkHeight = 500.0D;
+            @GlobalConfig(value = "no-chunk-speed")
+            public double noChunkSpeed = -1.0D;
+            @GlobalConfig("message")
+            public boolean noChunkMes = true;
+            @GlobalConfig(value = "message-start")
+            public String noChunkStartMes = "Flight enter cruise mode";
+            @GlobalConfig(value = "message-end")
+            public String noChunkEndMes = "Flight exit cruise mode";
 
             public static class ElytraNoChunkLoadValidator extends BooleanConfigValidator {
                 @Override
@@ -351,51 +428,7 @@ public final class LeavesConfig {
                     ElytraAeronauticsHelper.setActive(value);
                 }
             }
-
-            @GlobalConfig(value = "no-chunk-height")
-            public double noChunkHeight = 500.0D;
-
-            @GlobalConfig(value = "no-chunk-speed")
-            public double noChunkSpeed = -1.0D;
-
-            @GlobalConfig("message")
-            public boolean noChunkMes = true;
-
-            @GlobalConfig(value = "message-start")
-            public String noChunkStartMes = "Flight enter cruise mode";
-
-            @GlobalConfig(value = "message-end")
-            public String noChunkEndMes = "Flight exit cruise mode";
         }
-
-        @RemovedConfig(name = "redstone-shears-wrench", category = {}, transform = true)
-        @GlobalConfig("redstone-shears-wrench")
-        public boolean redstoneShearsWrench = true;
-
-        @RemovedConfig(name = "budding-amethyst-can-push-by-piston", category = {}, transform = true)
-        @GlobalConfig("budding-amethyst-can-push-by-piston")
-        public boolean buddingAmethystCanPushByPiston = false;
-
-        @RemovedConfig(name = "spectator-dont-get-advancement", category = {}, transform = true)
-        @GlobalConfig("spectator-dont-get-advancement")
-        public boolean spectatorDontGetAdvancement = false;
-
-        @RemovedConfig(name = "stick-change-armorstand-arm-status", category = {}, transform = true)
-        @GlobalConfig("stick-change-armorstand-arm-status")
-        public boolean stickChangeArmorStandArmStatus = true;
-
-        @RemovedConfig(name = "snowball-and-egg-can-knockback-player", category = {}, transform = true)
-        @GlobalConfig("snowball-and-egg-can-knockback-player")
-        public boolean snowballAndEggCanKnockback = true;
-
-        @GlobalConfig("flatten-triangular-distribution")
-        public boolean flattenTriangularDistribution = false;
-
-        @GlobalConfig("player-operation-limiter")
-        public boolean playerOperationLimiter = false;
-
-        @GlobalConfig(value = "renewable-elytra", validator = RenewableElytraValidator.class)
-        public double renewableElytra = -1.0F;
 
         private static class RenewableElytraValidator extends DoubleConfigValidator {
             @Override
@@ -406,10 +439,6 @@ public final class LeavesConfig {
             }
         }
 
-        public int shulkerBoxStackSize = 1;
-        @GlobalConfig(value = "stackable-shulker-boxes", validator = StackableShulkerValidator.class)
-        private String stackableShulkerBoxes = "false";
-
         private static class StackableShulkerValidator extends StringConfigValidator {
             @Override
             public void verify(String old, String value) throws IllegalArgumentException {
@@ -417,12 +446,6 @@ public final class LeavesConfig {
                 LeavesConfig.modify.shulkerBoxStackSize = Integer.parseInt(realValue);
             }
         }
-
-        @GlobalConfig("force-void-trade")
-        public boolean forceVoidTrade = false;
-
-        @GlobalConfig(value = "mc-technical-survival-mode", validator = McTechnicalModeValidator.class, lock = true)
-        public boolean mcTechnicalMode = true;
 
         private static class McTechnicalModeValidator extends BooleanConfigValidator {
             @Override
@@ -433,27 +456,12 @@ public final class LeavesConfig {
             }
         }
 
-        @GlobalConfig("return-nether-portal-fix")
-        public boolean netherPortalFix = false;
-
-        @GlobalConfig(value = "use-vanilla-random", lock = true, validator = UseVanillaRandomValidator.class)
-        public boolean useVanillaRandom = false;
-
         private static class UseVanillaRandomValidator extends BooleanConfigValidator {
             @Override
             public void verify(Boolean old, Boolean value) throws IllegalArgumentException {
                 LeavesFeatureSet.register(LeavesFeature.of("use_vanilla_random", value));
             }
         }
-
-        @GlobalConfig("fix-update-suppression-crash")
-        public boolean updateSuppressionCrashFix = true;
-
-        @GlobalConfig(value = "bedrock-break-list", lock = true)
-        public boolean bedrockBreakList = false;
-
-        @GlobalConfig(value = "disable-distance-check-for-use-item", validator = DisableDistanceCheckForUseItemValidator.class)
-        public boolean disableDistanceCheckForUseItem = false;
 
         private static class DisableDistanceCheckForUseItemValidator extends BooleanConfigValidator {
             @Override
@@ -464,21 +472,6 @@ public final class LeavesConfig {
             }
         }
 
-        @GlobalConfig("no-feather-falling-trample")
-        public boolean noFeatherFallingTrample = false;
-
-        @GlobalConfig("shared-villager-discounts")
-        public boolean sharedVillagerDiscounts = false;
-
-        @GlobalConfig("disable-check-out-of-order-command")
-        public boolean disableCheckOutOfOrderCommand = false;
-
-        @GlobalConfig("despawn-enderman-with-block")
-        public boolean despawnEndermanWithBlock = false;
-
-        @GlobalConfig(value = "creative-no-clip", validator = CreativeNoClipValidator.class)
-        public boolean creativeNoClip = false;
-
         private static class CreativeNoClipValidator extends BooleanConfigValidator {
             @Override
             public void verify(Boolean old, Boolean value) throws IllegalArgumentException {
@@ -486,24 +479,12 @@ public final class LeavesConfig {
             }
         }
 
-        @GlobalConfig("shave-snow-layers")
-        public boolean shaveSnowLayers = true;
-
-        @GlobalConfig("disable-packet-limit")
-        public boolean disablePacketLimit = false;
-
-        @GlobalConfig(value = "lava-riptide", validator = LavaRiptideValidator.class)
-        public boolean lavaRiptide = false;
-
         private static class LavaRiptideValidator extends BooleanConfigValidator {
             @Override
             public void verify(Boolean old, Boolean value) throws IllegalArgumentException {
                 LeavesFeatureSet.register(LeavesFeature.of("lava_riptide", value));
             }
         }
-
-        @GlobalConfig(value = "no-block-update-command", validator = NoBlockUpdateValidator.class)
-        public boolean noBlockUpdateCommand = false;
 
         private static class NoBlockUpdateValidator extends BooleanConfigValidator {
             @Override
@@ -516,33 +497,12 @@ public final class LeavesConfig {
             }
         }
 
-        @GlobalConfig("no-tnt-place-update")
-        public boolean noTNTPlaceUpdate = false;
-
-        @GlobalConfig("raider-die-skip-self-raid-check")
-        public boolean skipSelfRaidCheck = false;
-
-        @GlobalConfig("container-passthrough")
-        public boolean containerPassthrough = false;
-
-        @GlobalConfig(value = "avoid-anvil-too-expensive", validator = AnvilNotExpensiveValidator.class)
-        public boolean avoidAnvilTooExpensive = false;
-
         private static class AnvilNotExpensiveValidator extends BooleanConfigValidator {
             @Override
             public void verify(Boolean old, Boolean value) throws IllegalArgumentException {
                 CarpetRules.register(CarpetRule.of("pca", "avoidAnvilTooExpensive", value));
             }
         }
-
-        @GlobalConfig("bow-infinity-fix")
-        public boolean bowInfinityFix = false;
-
-        @GlobalConfig("hopper-counter")
-        public boolean hopperCounter = false;
-
-        @GlobalConfig(value = "spider-jockeys-drop-gapples", validator = JockeysDropGAppleValidator.class)
-        public double spiderJockeysDropGapples = -1.0;
 
         private static class JockeysDropGAppleValidator extends DoubleConfigValidator {
             @Override
@@ -553,19 +513,6 @@ public final class LeavesConfig {
             }
         }
 
-        @GlobalConfig("renewable-deepslate")
-        public boolean renewableDeepslate = false;
-
-        @GlobalConfig("renewable-sponges")
-        public boolean renewableSponges = false;
-
-        @GlobalConfig(value = "renewable-coral", validator = RenewableCoralValidator.class)
-        public RenewableCoralType renewableCoral = RenewableCoralType.FALSE;
-
-        public enum RenewableCoralType {
-            FALSE, TRUE, EXPANDED
-        }
-
         private static class RenewableCoralValidator extends EnumConfigValidator<RenewableCoralType> {
             @Override
             public void verify(RenewableCoralType old, RenewableCoralType value) throws IllegalArgumentException {
@@ -573,16 +520,14 @@ public final class LeavesConfig {
             }
         }
 
-        @GlobalConfig("fast-resume")
-        public boolean fastResume = false;
-
-        public ForcePeacefulModeSwitchConfig peacefulModeSwitch = new ForcePeacefulModeSwitchConfig();
-
         @GlobalConfigCategory("force-peaceful-mode-switch")
         public static class ForcePeacefulModeSwitchConfig {
             @RemovedConfig(name = "force-peaceful-mode", category = "modify", transform = true)
             @GlobalConfig(value = "tick", validator = TickValidator.class)
             public int tick = -1;
+            @GlobalConfig(value = "types", validator = TypeValidator.class)
+            public List<ForcePeacefulModeSwitchType> types = List.of(ForcePeacefulModeSwitchType.BLAZE, ForcePeacefulModeSwitchType.WITHER, ForcePeacefulModeSwitchType.SHULKER, ForcePeacefulModeSwitchType.WARDEN);
+            public Set<Class<? extends Entity>> classTypes = new HashSet<>();
 
             private static class TickValidator extends IntConfigValidator {
                 @Override
@@ -592,10 +537,6 @@ public final class LeavesConfig {
                     }
                 }
             }
-
-            @GlobalConfig(value = "types", validator = TypeValidator.class)
-            public List<ForcePeacefulModeSwitchType> types = List.of(ForcePeacefulModeSwitchType.BLAZE, ForcePeacefulModeSwitchType.WITHER, ForcePeacefulModeSwitchType.SHULKER, ForcePeacefulModeSwitchType.WARDEN);
-            public Set<Class<? extends Entity>> classTypes = new HashSet<>();
 
             private static class TypeValidator extends ListConfigValidator.ENUM<ForcePeacefulModeSwitchType> {
                 @Override
@@ -612,18 +553,6 @@ public final class LeavesConfig {
             }
         }
 
-        @GlobalConfig("disable-vault-blacklist")
-        public boolean disableVaultBlacklist = false;
-
-        @GlobalConfig(value = "exp-orb-absorb-mode", validator = ExpOrbModeValidator.class)
-        private ExpOrbAbsorbMode expOrbAbsorbMode = ExpOrbAbsorbMode.VANILLA;
-
-        public Predicate<ServerPlayer> fastAbsorbPredicate = player -> false;
-
-        public enum ExpOrbAbsorbMode {
-            VANILLA, FAST, FAST_CREATIVE
-        }
-
         private static class ExpOrbModeValidator extends EnumConfigValidator<ExpOrbAbsorbMode> {
             @Override
             public void verify(ExpOrbAbsorbMode old, ExpOrbAbsorbMode value) throws IllegalArgumentException {
@@ -634,33 +563,37 @@ public final class LeavesConfig {
                 };
             }
         }
-
-        @RemovedConfig(name = "tick-command", category = "modify")
-        @RemovedConfig(name = "player-can-edit-sign", category = "modify")
-        @RemovedConfig(name = "mending-compatibility-infinity", category = {"modify", "minecraft-old"})
-        @RemovedConfig(name = "protection-stacking", category = {"modify", "minecraft-old"})
-        @RemovedConfig(name = "disable-moved-wrongly-threshold", category = "modify")
-        @RemovedConfig(name = "ignore-lc", category = "modify")
-        @RemovedConfig(name = "fix-fortress-mob-spawn", category = {"modify", "minecraft-old"})
-        private final boolean removed = false;
     }
-
-    public static PerformanceConfig performance = new PerformanceConfig();
 
     @GlobalConfigCategory("performance")
     public static class PerformanceConfig {
 
+        @RemovedConfig(name = "biome-temperatures-use-aging-cache", category = "performance")
+        @RemovedConfig(name = "cache-world-generator-sea-level", category = "performance")
+        @RemovedConfig(name = "cache-ominous-banner-item", category = "performance")
+        @RemovedConfig(name = "use-optimized-collection", category = "performance")
+        @RemovedConfig(name = "async-pathfinding", category = "performance")
+        @RemovedConfig(name = "async-mob-spawning", category = "performance")
+        @RemovedConfig(name = "async-entity-tracker", category = "performance")
+        @RemovedConfig(name = "fix-paper-6045", category = {"performance", "fix"})
+        @RemovedConfig(name = "fix-paper-9372", category = {"performance", "fix"})
+        @RemovedConfig(name = "skip-clone-loot-parameters", category = "performance")
+        @RemovedConfig(name = "skip-poi-find-in-vehicle", category = "performance")
+        @RemovedConfig(name = "strip-raytracing-for-entity", category = "performance")
+        @RemovedConfig(name = "get-nearby-players-streams", category = {"performance", "remove"})
+        @RemovedConfig(name = "optimize-world-generation-and-block-access", category = "performance")
+        @RemovedConfig(name = "cache-CubeVoxelShape-shape-array", category = "performance")
+        @RemovedConfig(name = "reduce-entity-fluid-lookup", category = "performance")
+        @RemovedConfig(name = "optimize-entity-coordinate-key", category = "performance")
+        @RemovedConfig(name = "entity-target-find-optimization", category = "performance")
+        @RemovedConfig(name = "use-more-thread-unsafe-random", category = "performance")
+        @RemovedConfig(name = "range-check-streams-and-iterators", category = {"performance", "remove"})
+        @RemovedConfig(name = "improve-fluid-direction-caching", category = "performance")
+        @RemovedConfig(name = "cache-BlockStatePairKey-hash", category = "performance")
+        @RemovedConfig(name = "optimize-chunk-ticking", category = "performance")
+        @RemovedConfig(name = "inventory-contains-iterators", category = {"performance", "remove"})
+        private final boolean removedPerformance = true;
         public PerformanceRemoveConfig remove = new PerformanceRemoveConfig();
-
-        @GlobalConfigCategory("remove")
-        public static class PerformanceRemoveConfig {
-            @GlobalConfig("tick-guard-lambda")
-            public boolean tickGuardLambda = true;
-
-            @GlobalConfig("damage-lambda")
-            public boolean damageLambda = true;
-        }
-
         @GlobalConfig("optimized-dragon-respawn")
         public boolean optimizedDragonRespawn = false;
 
@@ -721,39 +654,48 @@ public final class LeavesConfig {
         @GlobalConfig("fix-villagers-dont-release-memory")
         public boolean villagersDontReleaseMemoryFix = false;
 
-        @RemovedConfig(name = "biome-temperatures-use-aging-cache", category = "performance")
-        @RemovedConfig(name = "cache-world-generator-sea-level", category = "performance")
-        @RemovedConfig(name = "cache-ominous-banner-item", category = "performance")
-        @RemovedConfig(name = "use-optimized-collection", category = "performance")
-        @RemovedConfig(name = "async-pathfinding", category = "performance")
-        @RemovedConfig(name = "async-mob-spawning", category = "performance")
-        @RemovedConfig(name = "async-entity-tracker", category = "performance")
-        @RemovedConfig(name = "fix-paper-6045", category = {"performance", "fix"})
-        @RemovedConfig(name = "fix-paper-9372", category = {"performance", "fix"})
-        @RemovedConfig(name = "skip-clone-loot-parameters", category = "performance")
-        @RemovedConfig(name = "skip-poi-find-in-vehicle", category = "performance")
-        @RemovedConfig(name = "strip-raytracing-for-entity", category = "performance")
-        @RemovedConfig(name = "get-nearby-players-streams", category = {"performance", "remove"})
-        @RemovedConfig(name = "optimize-world-generation-and-block-access", category = "performance")
-        @RemovedConfig(name = "cache-CubeVoxelShape-shape-array", category = "performance")
-        @RemovedConfig(name = "reduce-entity-fluid-lookup", category = "performance")
-        @RemovedConfig(name = "optimize-entity-coordinate-key", category = "performance")
-        @RemovedConfig(name = "entity-target-find-optimization", category = "performance")
-        @RemovedConfig(name = "use-more-thread-unsafe-random", category = "performance")
-        @RemovedConfig(name = "range-check-streams-and-iterators", category = {"performance", "remove"})
-        @RemovedConfig(name = "improve-fluid-direction-caching", category = "performance")
-        @RemovedConfig(name = "cache-BlockStatePairKey-hash", category = "performance")
-        @RemovedConfig(name = "optimize-chunk-ticking", category = "performance")
-        @RemovedConfig(name = "inventory-contains-iterators", category = {"performance", "remove"})
-        private final boolean removedPerformance = true;
-    }
+        @GlobalConfigCategory("remove")
+        public static class PerformanceRemoveConfig {
+            @GlobalConfig("tick-guard-lambda")
+            public boolean tickGuardLambda = true;
 
-    public static ProtocolConfig protocol = new ProtocolConfig();
+            @GlobalConfig("damage-lambda")
+            public boolean damageLambda = true;
+        }
+    }
 
     @GlobalConfigCategory("protocol")
     public static class ProtocolConfig {
 
         public BladerenConfig bladeren = new BladerenConfig();
+        public SyncmaticaConfig syncmatica = new SyncmaticaConfig();
+        public PCAConfig pca = new PCAConfig();
+        public AppleSkinConfig appleskin = new AppleSkinConfig();
+        public ServuxConfig servux = new ServuxConfig();
+        @GlobalConfig("bbor-protocol")
+        public boolean bborProtocol = false;
+        @GlobalConfig("jade-protocol")
+        public boolean jadeProtocol = false;
+        @GlobalConfig(value = "alternative-block-placement", validator = AlternativePlaceValidator.class)
+        public AlternativePlaceType alternativeBlockPlacement = AlternativePlaceType.NONE;
+        @GlobalConfig("xaero-map-protocol")
+        public boolean xaeroMapProtocol = false;
+        @GlobalConfig(value = "xaero-map-server-id")
+        public int xaeroMapServerID = new Random().nextInt();
+        @GlobalConfig("leaves-carpet-support")
+        public boolean leavesCarpetSupport = false;
+        @GlobalConfig("lms-paster-protocol")
+        public boolean lmsPasterProtocol = false;
+        @GlobalConfig(value = "rei-server-protocol", validator = ReiValidator.class)
+        public boolean reiServerProtocol = false;
+        @GlobalConfig("chat-image-protocol")
+        public boolean chatImageProtocol = false;
+        @RemovedConfig(name = "recipe-send-all", category = {"protocol"})
+        public boolean recipeSendAll = false;
+
+        public enum AlternativePlaceType {
+            NONE, CARPET, CARPET_FIX, LITEMATICA
+        }
 
         @GlobalConfigCategory("bladeren")
         public static class BladerenConfig {
@@ -762,6 +704,8 @@ public final class LeavesConfig {
 
             @GlobalConfig(value = "mspt-sync-protocol", validator = MSPTSyncValidator.class)
             public boolean msptSyncProtocol = false;
+            @GlobalConfig(value = "mspt-sync-tick-interval", validator = MSPTSyncIntervalValidator.class)
+            public int msptSyncTickInterval = 20;
 
             private static class MSPTSyncValidator extends BooleanConfigValidator {
                 @Override
@@ -769,9 +713,6 @@ public final class LeavesConfig {
                     LeavesFeatureSet.register(LeavesFeature.of("mspt_sync", value));
                 }
             }
-
-            @GlobalConfig(value = "mspt-sync-tick-interval", validator = MSPTSyncIntervalValidator.class)
-            public int msptSyncTickInterval = 20;
 
             private static class MSPTSyncIntervalValidator extends IntConfigValidator {
                 @Override
@@ -783,12 +724,14 @@ public final class LeavesConfig {
             }
         }
 
-        public SyncmaticaConfig syncmatica = new SyncmaticaConfig();
-
         @GlobalConfigCategory("syncmatica")
         public static class SyncmaticaConfig {
             @GlobalConfig(value = "enable", validator = SyncmaticaValidator.class)
             public boolean enable = false;
+            @GlobalConfig("quota")
+            public boolean useQuota = false;
+            @GlobalConfig(value = "quota-limit")
+            public int quotaLimit = 40000000;
 
             public static class SyncmaticaValidator extends BooleanConfigValidator {
                 @Override
@@ -798,21 +741,20 @@ public final class LeavesConfig {
                     }
                 }
             }
-
-            @GlobalConfig("quota")
-            public boolean useQuota = false;
-
-            @GlobalConfig(value = "quota-limit")
-            public int quotaLimit = 40000000;
         }
-
-        public PCAConfig pca = new PCAConfig();
 
         @GlobalConfigCategory("pca")
         public static class PCAConfig {
             @RemovedConfig(name = "pca-sync-protocol", category = "protocol", transform = true)
             @GlobalConfig(value = "pca-sync-protocol", validator = PcaValidator.class)
             public boolean enable = false;
+            @RemovedConfig(name = "pca-sync-player-entity", category = "protocol", transform = true)
+            @GlobalConfig(value = "pca-sync-player-entity")
+            public PcaPlayerEntityType syncPlayerEntity = PcaPlayerEntityType.OPS;
+
+            public enum PcaPlayerEntityType {
+                NOBODY, BOT, OPS, OPS_AND_SELF, EVERYONE
+            }
 
             public static class PcaValidator extends BooleanConfigValidator {
                 @Override
@@ -822,17 +764,7 @@ public final class LeavesConfig {
                     }
                 }
             }
-
-            @RemovedConfig(name = "pca-sync-player-entity", category = "protocol", transform = true)
-            @GlobalConfig(value = "pca-sync-player-entity")
-            public PcaPlayerEntityType syncPlayerEntity = PcaPlayerEntityType.OPS;
-
-            public enum PcaPlayerEntityType {
-                NOBODY, BOT, OPS, OPS_AND_SELF, EVERYONE
-            }
         }
-
-        public AppleSkinConfig appleskin = new AppleSkinConfig();
 
         @GlobalConfigCategory("appleskin")
         public static class AppleSkinConfig {
@@ -843,8 +775,6 @@ public final class LeavesConfig {
             @GlobalConfig("sync-tick-interval")
             public int syncTickInterval = 20;
         }
-
-        public ServuxConfig servux = new ServuxConfig();
 
         @GlobalConfigCategory("servux")
         public static class ServuxConfig {
@@ -879,19 +809,6 @@ public final class LeavesConfig {
             }
         }
 
-        @GlobalConfig("bbor-protocol")
-        public boolean bborProtocol = false;
-
-        @GlobalConfig("jade-protocol")
-        public boolean jadeProtocol = false;
-
-        @GlobalConfig(value = "alternative-block-placement", validator = AlternativePlaceValidator.class)
-        public AlternativePlaceType alternativeBlockPlacement = AlternativePlaceType.NONE;
-
-        public enum AlternativePlaceType {
-            NONE, CARPET, CARPET_FIX, LITEMATICA
-        }
-
         private static class AlternativePlaceValidator extends EnumConfigValidator<AlternativePlaceType> {
 
             @Override
@@ -909,21 +826,6 @@ public final class LeavesConfig {
             }
         }
 
-        @GlobalConfig("xaero-map-protocol")
-        public boolean xaeroMapProtocol = false;
-
-        @GlobalConfig(value = "xaero-map-server-id")
-        public int xaeroMapServerID = new Random().nextInt();
-
-        @GlobalConfig("leaves-carpet-support")
-        public boolean leavesCarpetSupport = false;
-
-        @GlobalConfig("lms-paster-protocol")
-        public boolean lmsPasterProtocol = false;
-
-        @GlobalConfig(value = "rei-server-protocol", validator = ReiValidator.class)
-        public boolean reiServerProtocol = false;
-
         public static class ReiValidator extends BooleanConfigValidator {
             @Override
             public void verify(Boolean old, Boolean value) throws IllegalArgumentException {
@@ -932,25 +834,41 @@ public final class LeavesConfig {
                 }
             }
         }
-
-        @GlobalConfig("chat-image-protocol")
-        public boolean chatImageProtocol = false;
-
-        @RemovedConfig(name = "recipe-send-all", category = {"protocol"})
-        public boolean recipeSendAll = false;
     }
-
-    public static MiscConfig mics = new MiscConfig();
 
     @GlobalConfigCategory("misc")
     public static class MiscConfig {
 
         public AutoUpdateConfig autoUpdate = new AutoUpdateConfig();
+        public ExtraYggdrasilConfig yggdrasil = new ExtraYggdrasilConfig();
+        @GlobalConfig("disable-method-profiler")
+        public boolean disableMethodProfiler = true;
+        @RemovedConfig(name = "no-chat-sign", category = {}, transform = true)
+        @GlobalConfig("no-chat-sign")
+        public boolean noChatSign = true;
+        @GlobalConfig("dont-respond-ping-before-start-fully")
+        public boolean dontRespondPingBeforeStart = true;
+        @GlobalConfig(value = "server-lang", lock = true, validator = ServerLangValidator.class)
+        public String serverLang = "en_us";
+        @GlobalConfig(value = "server-mod-name")
+        public String serverModName = "Leaves";
+        @GlobalConfig("bstats-privacy-mode")
+        public boolean bstatsPrivacyMode = false;
+        @GlobalConfig("force-minecraft-command")
+        public boolean forceMinecraftCommand = false;
+        @GlobalConfig("leaves-packet-event")
+        public boolean leavesPacketEvent = true;
 
         @GlobalConfigCategory("auto-update")
         public static class AutoUpdateConfig {
             @GlobalConfig(value = "enable", lock = true, validator = AutoUpdateValidator.class)
             public boolean enable = false;
+            @GlobalConfig(value = "download-source", lock = true, validator = DownloadSourceValidator.class)
+            public String source = "application";
+            @GlobalConfig("allow-experimental")
+            public Boolean allowExperimental = false;
+            @GlobalConfig(value = "time", lock = true)
+            public List<String> updateTime = List.of("14:00", "2:00");
 
             private static class AutoUpdateValidator extends BooleanConfigValidator {
                 @Override
@@ -964,9 +882,6 @@ public final class LeavesConfig {
                 }
             }
 
-            @GlobalConfig(value = "download-source", lock = true, validator = DownloadSourceValidator.class)
-            public String source = "application";
-
             public static class DownloadSourceValidator extends StringConfigValidator {
                 private static final List<String> suggestSourceList = List.of("application", "cloud");
 
@@ -975,20 +890,16 @@ public final class LeavesConfig {
                     return suggestSourceList;
                 }
             }
-
-            @GlobalConfig("allow-experimental")
-            public Boolean allowExperimental = false;
-
-            @GlobalConfig(value = "time", lock = true)
-            public List<String> updateTime = List.of("14:00", "2:00");
         }
-
-        public ExtraYggdrasilConfig yggdrasil = new ExtraYggdrasilConfig();
 
         @GlobalConfigCategory("extra-yggdrasil-service")
         public static class ExtraYggdrasilConfig {
             @GlobalConfig(value = "enable", validator = ExtraYggdrasilValidator.class)
             public boolean enable = false;
+            @GlobalConfig("login-protect")
+            public boolean loginProtect = false;
+            @GlobalConfig(value = "urls", lock = true, validator = ExtraYggdrasilUrlsValidator.class)
+            private final List<String> serviceList = List.of("https://url.with.authlib-injector-yggdrasil");
 
             public static class ExtraYggdrasilValidator extends BooleanConfigValidator {
                 @Override
@@ -1000,12 +911,6 @@ public final class LeavesConfig {
                 }
             }
 
-            @GlobalConfig("login-protect")
-            public boolean loginProtect = false;
-
-            @GlobalConfig(value = "urls", lock = true, validator = ExtraYggdrasilUrlsValidator.class)
-            private List<String> serviceList = List.of("https://url.with.authlib-injector-yggdrasil");
-
             public static class ExtraYggdrasilUrlsValidator extends ListConfigValidator.STRING {
                 @Override
                 public void verify(List<String> old, List<String> value) throws IllegalArgumentException {
@@ -1013,19 +918,6 @@ public final class LeavesConfig {
                 }
             }
         }
-
-        @GlobalConfig("disable-method-profiler")
-        public boolean disableMethodProfiler = true;
-
-        @RemovedConfig(name = "no-chat-sign", category = {}, transform = true)
-        @GlobalConfig("no-chat-sign")
-        public boolean noChatSign = true;
-
-        @GlobalConfig("dont-respond-ping-before-start-fully")
-        public boolean dontRespondPingBeforeStart = true;
-
-        @GlobalConfig(value = "server-lang", lock = true, validator = ServerLangValidator.class)
-        public String serverLang = "en_us";
 
         private static class ServerLangValidator extends StringConfigValidator {
             private static final List<String> supportLang = List.of("en_us", "zh_cn");
@@ -1042,27 +934,14 @@ public final class LeavesConfig {
                 return supportLang;
             }
         }
-
-        @GlobalConfig(value = "server-mod-name")
-        public String serverModName = "Leaves";
-
-        @GlobalConfig("bstats-privacy-mode")
-        public boolean bstatsPrivacyMode = false;
-
-        @GlobalConfig("force-minecraft-command")
-        public boolean forceMinecraftCommand = false;
-
-        @GlobalConfig("leaves-packet-event")
-        public boolean leavesPacketEvent = true;
     }
-
-    public static RegionConfig region = new RegionConfig();
 
     @GlobalConfigCategory("region")
     public static class RegionConfig {
 
         @GlobalConfig(value = "format", lock = true, validator = RegionFormatValidator.class)
         public org.leavesmc.leaves.region.RegionFileFormat format = org.leavesmc.leaves.region.RegionFileFormat.ANVIL;
+        public LinearConfig linear = new LinearConfig();
 
         private static class RegionFormatValidator extends EnumConfigValidator<org.leavesmc.leaves.region.RegionFileFormat> {
             @Override
@@ -1071,25 +950,17 @@ public final class LeavesConfig {
             }
         }
 
-        public LinearConfig linear = new LinearConfig();
-
         @GlobalConfigCategory("linear")
         public static class LinearConfig {
 
+            @RemovedConfig(name = "flush-frequency", category = {"region", "linear"})
+            @RemovedConfig(name = "crash-on-broken-symlink", category = {"region", "linear"})
+            @RemovedConfig(name = "auto-convert-anvil-to-linear", category = {"region", "linear"})
+            private final boolean removed = true;
             @GlobalConfig(value = "version", lock = true)
             public org.leavesmc.leaves.region.linear.LinearVersion version = org.leavesmc.leaves.region.linear.LinearVersion.V2;
-
             @GlobalConfig(value = "flush-max-threads", lock = true)
             public int flushThreads = 6;
-
-            public int getLinearFlushThreads() {
-                if (flushThreads <= 0) {
-                    return Math.max(Runtime.getRuntime().availableProcessors() + flushThreads, 1);
-                } else {
-                    return flushThreads;
-                }
-            }
-
             @GlobalConfig(value = "flush-delay-ms", lock = true)
             public int flushDelayMs = 100;
 
@@ -1099,6 +970,14 @@ public final class LeavesConfig {
             @GlobalConfig(value = "compression-level", lock = true, validator = LinearCompressValidator.class)
             public int compressionLevel = 1;
 
+            public int getLinearFlushThreads() {
+                if (flushThreads <= 0) {
+                    return Math.max(Runtime.getRuntime().availableProcessors() + flushThreads, 1);
+                } else {
+                    return flushThreads;
+                }
+            }
+
             private static class LinearCompressValidator extends IntConfigValidator {
                 @Override
                 public void verify(Integer old, Integer value) throws IllegalArgumentException {
@@ -1107,35 +986,24 @@ public final class LeavesConfig {
                     }
                 }
             }
-
-            @RemovedConfig(name = "flush-frequency", category = {"region", "linear"})
-            @RemovedConfig(name = "crash-on-broken-symlink", category = {"region", "linear"})
-            @RemovedConfig(name = "auto-convert-anvil-to-linear", category = {"region", "linear"})
-            private final boolean removed = true;
         }
     }
 
-    public static FixConfig fix = new FixConfig();
-
     @GlobalConfigCategory("fix")
     public static class FixConfig {
+        @RemovedConfig(name = "spigot-EndPlatform-destroy", category = "fix")
+        private final boolean spigotEndPlatformDestroy = false;
         @GlobalConfig("vanilla-hopper")
         public boolean vanillaHopper = false;
-
         @GlobalConfig("vanilla-display-name")
         public boolean vanillaDisplayName = false;
-
         @GlobalConfig(value = "collision-behavior")
         public CollisionBehavior collisionBehavior = CollisionBehavior.BLOCK_SHAPE_VANILLA;
+        @GlobalConfig("vanilla-portal-handle")
+        public boolean vanillaPortalHandle = false;
 
         public enum CollisionBehavior {
             VANILLA, BLOCK_SHAPE_VANILLA, PAPER
         }
-
-        @GlobalConfig("vanilla-portal-handle")
-        public boolean vanillaPortalHandle = false;
-
-        @RemovedConfig(name = "spigot-EndPlatform-destroy", category = "fix")
-        private final boolean spigotEndPlatformDestroy = false;
     }
 }

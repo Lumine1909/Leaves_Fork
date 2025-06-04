@@ -29,6 +29,10 @@ public class NoBlockUpdateCommand extends Command {
         }
     }
 
+    public static boolean isNoBlockUpdate() {
+        return LeavesConfig.modify.noBlockUpdateCommand && noBlockUpdate;
+    }
+
     @Override
     public @NotNull List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, String @NotNull [] args) throws IllegalArgumentException {
         return List.of();
@@ -44,9 +48,5 @@ public class NoBlockUpdateCommand extends Command {
         ), "bukkit.command.blockupdate");
 
         return true;
-    }
-
-    public static boolean isNoBlockUpdate() {
-        return LeavesConfig.modify.noBlockUpdateCommand && noBlockUpdate;
     }
 }

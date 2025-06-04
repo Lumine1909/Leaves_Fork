@@ -12,13 +12,13 @@ import java.util.logging.Logger;
 
 public class LeavesSparkPlugin extends PaperSparkPlugin {
 
+    public LeavesSparkPlugin(Server server, Logger logger, PaperScheduler scheduler, PaperClassLookup classLookup) {
+        super(server, logger, scheduler, classLookup);
+    }
+
     @NotNull
     public static LeavesSparkPlugin create(Compatibility ignoredCompatibility, Server server, Logger logger, PaperScheduler scheduler, PaperClassLookup classLookup) {
         return new LeavesSparkPlugin(server, logger, scheduler, classLookup);
-    }
-
-    public LeavesSparkPlugin(Server server, Logger logger, PaperScheduler scheduler, PaperClassLookup classLookup) {
-        super(server, logger, scheduler, classLookup);
     }
 
     @Override

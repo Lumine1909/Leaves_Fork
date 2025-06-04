@@ -12,6 +12,7 @@ import io.papermc.paper.plugin.provider.configuration.serializer.PermissionConfi
 import io.papermc.paper.plugin.provider.configuration.serializer.constraints.PluginConfigConstraints;
 import io.papermc.paper.plugin.provider.configuration.type.PermissionConfiguration;
 import org.bukkit.craftbukkit.util.ApiVersion;
+import org.jetbrains.annotations.NotNull;
 import org.spongepowered.configurate.ConfigurateException;
 import org.spongepowered.configurate.ConfigurationNode;
 import org.spongepowered.configurate.gson.GsonConfigurationLoader;
@@ -27,9 +28,9 @@ import java.util.function.Predicate;
 @SuppressWarnings("FieldMayBeFinal")
 @ConfigSerializable
 public class LeavesPluginMeta extends PaperPluginMeta {
+    static final ApiVersion MINIMUM = ApiVersion.getOrCreateVersion("1.21.4");
     private FeaturesConfiguration features = new FeaturesConfiguration();
     private MixinConfiguration mixin = new MixinConfiguration();
-    static final ApiVersion MINIMUM = ApiVersion.getOrCreateVersion("1.21.4");
 
     public static LeavesPluginMeta create(BufferedReader reader) throws ConfigurateException {
         GsonConfigurationLoader loader = GsonConfigurationLoader.builder()
@@ -38,7 +39,7 @@ public class LeavesPluginMeta extends PaperPluginMeta {
                 options.serializers((serializers) ->
                     serializers.register(new ScalarSerializer<>(ApiVersion.class) {
                             @Override
-                            public ApiVersion deserialize(final Type type, final Object obj) throws SerializationException {
+                            public ApiVersion deserialize(final @NotNull Type type, final @NotNull Object obj) throws SerializationException {
                                 try {
                                     final ApiVersion version = ApiVersion.getOrCreateVersion(obj.toString());
                                     if (version.isOlderThan(MINIMUM)) {
@@ -51,7 +52,7 @@ public class LeavesPluginMeta extends PaperPluginMeta {
                             }
 
                             @Override
-                            protected Object serialize(final ApiVersion item, final Predicate<Class<?>> typeSupported) {
+                            protected @NotNull Object serialize(final ApiVersion item, final @NotNull Predicate<Class<?>> typeSupported) {
                                 return item.getVersionString();
                             }
                         })

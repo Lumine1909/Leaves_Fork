@@ -44,8 +44,7 @@ public class LinearRegionFile implements IRegionFile {
 
     private static final byte V1_VERSION = 2;
     private static final byte VERSION = 3;
-
-    private byte[][] bucketBuffers;
+    private static int activeSaveThreads = 0;
     private final byte[][] buffer = new byte[1024][];
     private final int[] bufferUncompressedSize = new int[1024];
 
@@ -54,20 +53,16 @@ public class LinearRegionFile implements IRegionFile {
 
     private final LZ4Compressor compressor;
     private final LZ4FastDecompressor decompressor;
-
-    public boolean regionFileOpen = false;
-    private boolean markedToSave = false;
-    private boolean close = false;
-
-    public Path regionFile;
-
-    private int gridSize = 8;
-    private int bucketSize = 4;
     private final int compressionLevel;
     private final LinearVersion linearVersion;
     private final Thread bindThread;
-
-    private static int activeSaveThreads = 0;
+    public boolean regionFileOpen = false;
+    public Path regionFile;
+    private byte[][] bucketBuffers;
+    private boolean markedToSave = false;
+    private boolean close = false;
+    private int gridSize = 8;
+    private int bucketSize = 4;
 
     public LinearRegionFile(Path path, LinearVersion linearVersion, int compressionLevel) {
         Runnable flushCheck = () -> {
@@ -103,6 +98,14 @@ public class LinearRegionFile implements IRegionFile {
 
         this.compressor = LZ4Factory.fastestInstance().fastCompressor();
         this.decompressor = LZ4Factory.fastestInstance().fastDecompressor();
+    }
+
+    private static int getChunkIndex(int x, int z) {
+        return (x & 31) + ((z & 31) << 5);
+    }
+
+    private static int getTimestamp() {
+        return (int) (System.currentTimeMillis() / 1000L);
     }
 
     private synchronized void openRegionFile() {
@@ -539,21 +542,6 @@ public class LinearRegionFile implements IRegionFile {
         return new ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.RegionDataController.WriteData(data, ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.RegionDataController.WriteData.WriteResult.WRITE, out, regionFile -> out.close());
     }
 
-    private class ChunkBuffer extends ByteArrayOutputStream {
-
-        private final ChunkPos pos;
-
-        public ChunkBuffer(ChunkPos chunkcoordintpair) {
-            super();
-            this.pos = chunkcoordintpair;
-        }
-
-        public void close() {
-            ByteBuffer bytebuffer = ByteBuffer.wrap(this.buf, 0, this.count);
-            LinearRegionFile.this.write(this.pos, bytebuffer);
-        }
-    }
-
     private byte[] toByteArray(InputStream in) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         byte[] tempBuffer = new byte[4096];
@@ -597,14 +585,6 @@ public class LinearRegionFile implements IRegionFile {
         } catch (IOException e) {
             throw new IOException("Region flush IOException " + e + " " + this.regionFile);
         }
-    }
-
-    private static int getChunkIndex(int x, int z) {
-        return (x & 31) + ((z & 31) << 5);
-    }
-
-    private static int getTimestamp() {
-        return (int) (System.currentTimeMillis() / 1000L);
     }
 
     public boolean recalculateHeader() {
@@ -651,6 +631,21 @@ public class LinearRegionFile implements IRegionFile {
                 }
             }
             out.writeByte(b);
+        }
+    }
+
+    private class ChunkBuffer extends ByteArrayOutputStream {
+
+        private final ChunkPos pos;
+
+        public ChunkBuffer(ChunkPos chunkcoordintpair) {
+            super();
+            this.pos = chunkcoordintpair;
+        }
+
+        public void close() {
+            ByteBuffer bytebuffer = ByteBuffer.wrap(this.buf, 0, this.count);
+            LinearRegionFile.this.write(this.pos, bytebuffer);
         }
     }
 }

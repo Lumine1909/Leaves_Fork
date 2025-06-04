@@ -51,103 +51,7 @@ import static java.util.Map.entry;
 
 public class HopperCounter {
 
-    private static boolean enabled = false;
     private static final Map<DyeColor, HopperCounter> COUNTERS;
-
-    static {
-        EnumMap<DyeColor, HopperCounter> counterMap = new EnumMap<>(DyeColor.class);
-        for (DyeColor color : DyeColor.values()) {
-            counterMap.put(color, new HopperCounter(color));
-        }
-        COUNTERS = Collections.unmodifiableMap(counterMap);
-    }
-
-    public final DyeColor color;
-    private final TextComponent coloredName;
-    private final Object2LongMap<Item> counter = new Object2LongLinkedOpenHashMap<>();
-    private long startTick;
-    private long startMillis;
-
-    private HopperCounter(DyeColor color) {
-        this.startTick = -1;
-        this.color = color;
-        this.coloredName = Component.text(color.getName(), TextColor.color(color.getTextColor()));
-    }
-
-    public void add(MinecraftServer server, ItemStack stack) {
-        if (startTick < 0) {
-            startTick = server.overworld().getGameTime();
-            startMillis = System.currentTimeMillis();
-        }
-        Item item = stack.getItem();
-        counter.put(item, counter.getLong(item) + stack.getCount());
-    }
-
-    public void reset(MinecraftServer server) {
-        counter.clear();
-        startTick = server.overworld().getGameTime();
-        startMillis = System.currentTimeMillis();
-    }
-
-    public static void resetAll(MinecraftServer server, boolean fresh) {
-        for (HopperCounter counter : COUNTERS.values()) {
-            counter.reset(server);
-            if (fresh) {
-                counter.startTick = -1;
-            }
-        }
-    }
-
-    public List<Component> format(MinecraftServer server, boolean realTime) {
-        long ticks = Math.max(realTime ? (System.currentTimeMillis() - startMillis) / 50 : server.overworld().getGameTime() - startTick, -1);
-
-        if (startTick < 0 || ticks == -1) {
-            return Collections.singletonList(Component.text().append(coloredName, Component.text(" hasn't started counting yet")).build());
-        }
-
-        long total = getTotalItems();
-        if (total <= 0) {
-            return Collections.singletonList(Component.text()
-                .append(Component.text("No items for "), coloredName)
-                .append(Component.text(" yet ("), Component.text(String.format("%.2f ", ticks / (20.0 * 60.0)), Style.style(TextDecoration.BOLD)))
-                .append(Component.text("min"), Component.text(realTime ? " - real time" : ""), Component.text(")"))
-                .build());
-        }
-
-        List<Component> items = new ArrayList<>();
-        items.add(Component.text()
-            .append(Component.text("Items for "), coloredName, Component.text(" "))
-            .append(Component.text("("), Component.text(String.format("%.2f ", ticks * 1.0 / (20 * 60)), Style.style(TextDecoration.BOLD)))
-            .append(Component.text("min"), Component.text(realTime ? " - real time" : ""), Component.text("), "))
-            .append(Component.text("total: "), Component.text(total, Style.style(TextDecoration.BOLD)), Component.text(", "))
-            .append(Component.text("("), Component.text(String.format("%.1f", total * 1.0 * (20 * 60 * 60) / ticks), Style.style(TextDecoration.BOLD)))
-            .append(Component.text("/h):"))
-            .build());
-
-        items.addAll(counter.object2LongEntrySet().stream().sorted((e, f) -> Long.compare(f.getLongValue(), e.getLongValue())).map(entry -> {
-            Item item = entry.getKey();
-            Component name = Component.translatable(item.getDescriptionId());
-            TextColor textColor = guessColor(server, item);
-
-            if (textColor != null) {
-                name = name.style(name.style().merge(Style.style(textColor)));
-            } else {
-                name = name.style(name.style().merge(Style.style(TextDecoration.ITALIC)));
-            }
-
-            long count = entry.getLongValue();
-            return Component.text()
-                .append(Component.text("- ", NamedTextColor.GRAY))
-                .append(name)
-                .append(Component.text(": ", NamedTextColor.GRAY))
-                .append(Component.text(count, Style.style(TextDecoration.BOLD)), Component.text(", ", NamedTextColor.GRAY))
-                .append(Component.text(String.format("%.1f", count * (20.0 * 60.0 * 60.0) / ticks), Style.style(TextDecoration.BOLD)))
-                .append(Component.text("/h"))
-                .build();
-        }).toList());
-        return items;
-    }
-
     private static final Map<Item, Block> DEFAULTS = Map.<Item, Block>ofEntries(
         entry(Items.DANDELION, Blocks.YELLOW_WOOL),
         entry(Items.POPPY, Blocks.RED_WOOL),
@@ -234,7 +138,38 @@ public class HopperCounter {
         entry(Items.COPPER_INGOT, Blocks.COPPER_BLOCK),
         entry(Items.AMETHYST_SHARD, Blocks.AMETHYST_BLOCK)
     );
+    private static boolean enabled = false;
 
+    static {
+        EnumMap<DyeColor, HopperCounter> counterMap = new EnumMap<>(DyeColor.class);
+        for (DyeColor color : DyeColor.values()) {
+            counterMap.put(color, new HopperCounter(color));
+        }
+        COUNTERS = Collections.unmodifiableMap(counterMap);
+    }
+
+    public final DyeColor color;
+    private final TextComponent coloredName;
+    private final Object2LongMap<Item> counter = new Object2LongLinkedOpenHashMap<>();
+    private long startTick;
+    private long startMillis;
+
+    private HopperCounter(DyeColor color) {
+        this.startTick = -1;
+        this.color = color;
+        this.coloredName = Component.text(color.getName(), TextColor.color(color.getTextColor()));
+    }
+
+    public static void resetAll(MinecraftServer server, boolean fresh) {
+        for (HopperCounter counter : COUNTERS.values()) {
+            counter.reset(server);
+            if (fresh) {
+                counter.startTick = -1;
+            }
+        }
+    }
+
+    @SuppressWarnings("deprecation")
     @Nullable
     public static TextColor guessColor(@NotNull MinecraftServer server, Item item) {
         RegistryAccess registryAccess = server.registryAccess();
@@ -319,19 +254,84 @@ public class HopperCounter {
         return (r << 16) + (g << 8) + b;
     }
 
-    public long getTotalItems() {
-        return counter.isEmpty() ? 0 : counter.values().longStream().sum();
-    }
-
     public static HopperCounter getCounter(DyeColor color) {
         return COUNTERS.get(color);
+    }
+
+    public static boolean isEnabled() {
+        return LeavesConfig.modify.hopperCounter && enabled;
     }
 
     public static void setEnabled(boolean is) {
         enabled = is;
     }
 
-    public static boolean isEnabled() {
-        return LeavesConfig.modify.hopperCounter && enabled;
+    public void add(MinecraftServer server, ItemStack stack) {
+        if (startTick < 0) {
+            startTick = server.overworld().getGameTime();
+            startMillis = System.currentTimeMillis();
+        }
+        Item item = stack.getItem();
+        counter.put(item, counter.getLong(item) + stack.getCount());
+    }
+
+    public void reset(MinecraftServer server) {
+        counter.clear();
+        startTick = server.overworld().getGameTime();
+        startMillis = System.currentTimeMillis();
+    }
+
+    public List<Component> format(MinecraftServer server, boolean realTime) {
+        long ticks = Math.max(realTime ? (System.currentTimeMillis() - startMillis) / 50 : server.overworld().getGameTime() - startTick, -1);
+
+        if (startTick < 0 || ticks == -1) {
+            return Collections.singletonList(Component.text().append(coloredName, Component.text(" hasn't started counting yet")).build());
+        }
+
+        long total = getTotalItems();
+        if (total <= 0) {
+            return Collections.singletonList(Component.text()
+                .append(Component.text("No items for "), coloredName)
+                .append(Component.text(" yet ("), Component.text(String.format("%.2f ", ticks / (20.0 * 60.0)), Style.style(TextDecoration.BOLD)))
+                .append(Component.text("min"), Component.text(realTime ? " - real time" : ""), Component.text(")"))
+                .build());
+        }
+
+        List<Component> items = new ArrayList<>();
+        items.add(Component.text()
+            .append(Component.text("Items for "), coloredName, Component.text(" "))
+            .append(Component.text("("), Component.text(String.format("%.2f ", ticks * 1.0 / (20 * 60)), Style.style(TextDecoration.BOLD)))
+            .append(Component.text("min"), Component.text(realTime ? " - real time" : ""), Component.text("), "))
+            .append(Component.text("total: "), Component.text(total, Style.style(TextDecoration.BOLD)), Component.text(", "))
+            .append(Component.text("("), Component.text(String.format("%.1f", total * 1.0 * (20 * 60 * 60) / ticks), Style.style(TextDecoration.BOLD)))
+            .append(Component.text("/h):"))
+            .build());
+
+        items.addAll(counter.object2LongEntrySet().stream().sorted((e, f) -> Long.compare(f.getLongValue(), e.getLongValue())).map(entry -> {
+            Item item = entry.getKey();
+            Component name = Component.translatable(item.getDescriptionId());
+            TextColor textColor = guessColor(server, item);
+
+            if (textColor != null) {
+                name = name.style(name.style().merge(Style.style(textColor)));
+            } else {
+                name = name.style(name.style().merge(Style.style(TextDecoration.ITALIC)));
+            }
+
+            long count = entry.getLongValue();
+            return Component.text()
+                .append(Component.text("- ", NamedTextColor.GRAY))
+                .append(name)
+                .append(Component.text(": ", NamedTextColor.GRAY))
+                .append(Component.text(count, Style.style(TextDecoration.BOLD)), Component.text(", ", NamedTextColor.GRAY))
+                .append(Component.text(String.format("%.1f", count * (20.0 * 60.0 * 60.0) / ticks), Style.style(TextDecoration.BOLD)))
+                .append(Component.text("/h"))
+                .build();
+        }).toList());
+        return items;
+    }
+
+    public long getTotalItems() {
+        return counter.isEmpty() ? 0 : counter.values().longStream().sum();
     }
 }

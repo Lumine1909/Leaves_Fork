@@ -20,18 +20,12 @@ import java.util.List;
 public class MinecraftInternalPlugin extends PluginBase {
 
     public static final MinecraftInternalPlugin INSTANCE = new MinecraftInternalPlugin();
-
-    private boolean enabled = true;
-
     private final PluginDescriptionFile pdf;
+    private boolean enabled = true;
 
     public MinecraftInternalPlugin() {
         String pluginName = "Minecraft";
         pdf = new PluginDescriptionFile(pluginName, "1.0", "nms");
-    }
-
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
     }
 
     @Override
@@ -97,6 +91,10 @@ public class MinecraftInternalPlugin extends PluginBase {
     @Override
     public boolean isEnabled() {
         return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 
     @Override

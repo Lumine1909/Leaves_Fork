@@ -9,6 +9,7 @@ import java.util.regex.Pattern;
 public class MathUtils {
 
     private static final Pattern numericPattern = Pattern.compile("^-?[1-9]\\d*$|^0$");
+    private static final int[] MULTIPLY_DE_BRUIJN_BIT_POSITION = new int[]{0, 1, 28, 2, 29, 14, 24, 3, 30, 22, 20, 15, 25, 17, 4, 8, 31, 27, 13, 23, 21, 19, 16, 7, 26, 12, 18, 6, 11, 5, 10, 9};
 
     public static boolean isNumeric(String str) {
         return numericPattern.matcher(str).matches();
@@ -68,8 +69,6 @@ public class MathUtils {
 
         return vector;
     }
-
-    private static final int[] MULTIPLY_DE_BRUIJN_BIT_POSITION = new int[]{0, 1, 28, 2, 29, 14, 24, 3, 30, 22, 20, 15, 25, 17, 4, 8, 31, 27, 13, 23, 21, 19, 16, 7, 26, 12, 18, 6, 11, 5, 10, 9};
 
     public static int floorLog2(int value) {
         return ceilLog2(value) - (isPowerOfTwo(value) ? 0 : 1);

@@ -43,9 +43,8 @@ public class LeavesUpdateHelper {
     private final static String corePathFileName = autoUpdateDir + File.separator + "core.path";
 
     private final static ReentrantLock updateLock = new ReentrantLock();
-    private static boolean updateTaskStarted = false;
-
     private static final ScheduledExecutorService autoUpdateExecutor = Executors.newScheduledThreadPool(1);
+    private static boolean updateTaskStarted = false;
 
     public static void init() {
         File workingDirFile = new File(autoUpdateDir);

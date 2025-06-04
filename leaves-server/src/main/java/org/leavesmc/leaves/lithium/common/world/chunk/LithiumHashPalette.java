@@ -64,6 +64,10 @@ public class LithiumHashPalette<T> implements Palette<T> {
         this.table.defaultReturnValue(ABSENT_VALUE);
     }
 
+    public static <A> Palette<A> create(int bits, IdMap<A> idList, PaletteResize<A> listener, List<A> list) {
+        return new LithiumHashPalette<>(idList, bits, listener, list);
+    }
+
     @Override
     public int idFor(@NotNull T obj) {
         int id = this.table.getInt(obj);
@@ -187,10 +191,6 @@ public class LithiumHashPalette<T> implements Palette<T> {
             }
         }
         return builder.build();
-    }
-
-    public static <A> Palette<A> create(int bits, IdMap<A> idList, PaletteResize<A> listener, List<A> list) {
-        return new LithiumHashPalette<>(idList, bits, listener, list);
     }
 }
 

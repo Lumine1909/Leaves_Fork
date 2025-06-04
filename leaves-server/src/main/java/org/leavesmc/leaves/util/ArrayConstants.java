@@ -6,9 +6,6 @@ import net.minecraft.server.level.ServerLevel;
 
 public class ArrayConstants {
 
-    private ArrayConstants() {
-    }
-
     public static final Object[] emptyObjectArray = new Object[0];
     public static final int[] emptyIntArray = new int[0];
     public static final int[] zeroSingletonIntArray = new int[]{0};
@@ -18,5 +15,7 @@ public class ArrayConstants {
     public static final org.bukkit.entity.Entity[] emptyBukkitEntityArray = new org.bukkit.entity.Entity[0];
     public static final net.minecraft.world.entity.Entity[] emptyEntityArray = new net.minecraft.world.entity.Entity[0];
     public static final ServerLevel[] emptyServerLevelArray = new ServerLevel[0];
+    private ArrayConstants() {
+    }
 
 }

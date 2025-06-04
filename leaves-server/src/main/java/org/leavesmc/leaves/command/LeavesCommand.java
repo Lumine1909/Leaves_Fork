@@ -79,6 +79,18 @@ public final class LeavesCommand extends Command implements LeavesSuggestionComm
         return false;
     }
 
+    @Nullable
+    private static Pair<String, LeavesSubcommand> resolveCommand(String label) {
+        label = label.toLowerCase(Locale.ENGLISH);
+        LeavesSubcommand subCommand = SUBCOMMANDS.get(label);
+
+        if (subCommand != null) {
+            return Pair.of(label, subCommand);
+        }
+
+        return null;
+    }
+
     @NotNull
     @Override
     public List<String> tabComplete(final @NotNull CommandSender sender, final @NotNull String alias, final String[] args, final @Nullable Location location) throws IllegalArgumentException {
@@ -142,18 +154,6 @@ public final class LeavesCommand extends Command implements LeavesSuggestionComm
 
     public Component unknownMessage() {
         return text("Usage: /leaves [" + String.join(" | ", usableSubcommands()) + "]", RED);
-    }
-
-    @Nullable
-    private static Pair<String, LeavesSubcommand> resolveCommand(String label) {
-        label = label.toLowerCase(Locale.ENGLISH);
-        LeavesSubcommand subCommand = SUBCOMMANDS.get(label);
-
-        if (subCommand != null) {
-            return Pair.of(label, subCommand);
-        }
-
-        return null;
     }
 
 }

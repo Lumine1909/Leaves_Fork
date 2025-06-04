@@ -36,58 +36,8 @@ import java.util.Map;
 
 import static org.leavesmc.leaves.bytebuf.packet.PacketType.*;
 
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation", "rawtypes", "unchecked"})
 public class InternalBytebufHandler {
-
-    private class PacketHandler extends ChannelDuplexHandler {
-
-        private final static String handlerName = "leaves-bytebuf-handler";
-        private final Player player;
-
-        public PacketHandler(Player player) {
-            this.player = player;
-        }
-
-        @Override
-        public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-            if (msg instanceof BundlePacket<?> || msg instanceof BundleDelimiterPacket<?>) {
-                super.channelRead(ctx, msg);
-                return;
-            }
-
-            if (msg instanceof net.minecraft.network.protocol.Packet<?> nmsPacket) {
-                try {
-                    msg = callPacketInEvent(player, nmsPacket);
-                } catch (Exception e) {
-                    MinecraftServer.LOGGER.error("Error on PacketInEvent.", e);
-                }
-            }
-
-            if (msg != null) {
-                super.channelRead(ctx, msg);
-            }
-        }
-
-        @Override
-        public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
-            if (msg instanceof BundlePacket<?> || msg instanceof BundleDelimiterPacket<?>) {
-                super.write(ctx, msg, promise);
-                return;
-            }
-
-            if (msg instanceof net.minecraft.network.protocol.Packet<?> nmsPacket) {
-                try {
-                    msg = callPacketOutEvent(player, nmsPacket);
-                } catch (Exception e) {
-                    MinecraftServer.LOGGER.error("Error on PacketInEvent.", e);
-                }
-            }
-
-            if (msg != null) {
-                super.write(ctx, msg, promise);
-            }
-        }
-    }
 
     private static final List<String> PACKET_PACKAGES = List.of(
         "net.minecraft.network.protocol.common",
@@ -99,12 +49,10 @@ public class InternalBytebufHandler {
         "net.minecraft.network.protocol.ping",
         "net.minecraft.network.protocol.status"
     );
-
     public final Map<PacketListener, Plugin> listenerMap = new HashMap<>();
     private final BytebufManager manager = new SimpleBytebufManager(this);
     private final ImmutableMap<PacketType, StreamCodec> type2CodecMap;
     private final Cache<net.minecraft.network.protocol.PacketType<?>, PacketType> resultCache = CacheBuilder.newBuilder().build();
-
     public InternalBytebufHandler() {
         ImmutableMap.Builder<PacketType, StreamCodec> builder = ImmutableMap.builder();
 
@@ -236,5 +184,55 @@ public class InternalBytebufHandler {
         }
         codec.encode(buf, nmsPacket);
         return new Packet(type, new WrappedBytebuf(buf));
+    }
+
+    private class PacketHandler extends ChannelDuplexHandler {
+
+        private final static String handlerName = "leaves-bytebuf-handler";
+        private final Player player;
+
+        public PacketHandler(Player player) {
+            this.player = player;
+        }
+
+        @Override
+        public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+            if (msg instanceof BundlePacket<?> || msg instanceof BundleDelimiterPacket<?>) {
+                super.channelRead(ctx, msg);
+                return;
+            }
+
+            if (msg instanceof net.minecraft.network.protocol.Packet<?> nmsPacket) {
+                try {
+                    msg = callPacketInEvent(player, nmsPacket);
+                } catch (Exception e) {
+                    MinecraftServer.LOGGER.error("Error on PacketInEvent.", e);
+                }
+            }
+
+            if (msg != null) {
+                super.channelRead(ctx, msg);
+            }
+        }
+
+        @Override
+        public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+            if (msg instanceof BundlePacket<?> || msg instanceof BundleDelimiterPacket<?>) {
+                super.write(ctx, msg, promise);
+                return;
+            }
+
+            if (msg instanceof net.minecraft.network.protocol.Packet<?> nmsPacket) {
+                try {
+                    msg = callPacketOutEvent(player, nmsPacket);
+                } catch (Exception e) {
+                    MinecraftServer.LOGGER.error("Error on PacketInEvent.", e);
+                }
+            }
+
+            if (msg != null) {
+                super.write(ctx, msg, promise);
+            }
+        }
     }
 }

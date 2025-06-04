@@ -123,16 +123,6 @@ public class GlobalConfigManager {
         return verifiedConfigs.get(path);
     }
 
-    private static class ConfigNode {
-        String name;
-        Map<String, ConfigNode> children;
-
-        public ConfigNode(String name) {
-            this.name = name;
-            this.children = new HashMap<>();
-        }
-    }
-
     private static void traverseToNodeOrCreate(@NotNull String path) {
         String[] parts = path.split("\\.");
         ConfigNode current = rootNode;
@@ -167,5 +157,15 @@ public class GlobalConfigManager {
             return Collections.emptySet();
         }
         return current.children.keySet();
+    }
+
+    private static class ConfigNode {
+        String name;
+        Map<String, ConfigNode> children;
+
+        public ConfigNode(String name) {
+            this.name = name;
+            this.children = new HashMap<>();
+        }
     }
 }

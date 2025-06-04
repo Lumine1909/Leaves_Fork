@@ -12,6 +12,24 @@ import java.util.stream.Collectors;
 
 public abstract class ConfigValidatorImpl<E> implements ConfigValidator<E> {
 
+    @SuppressWarnings("unchecked")
+    private static <E> Class<E> getTypeArgument(Class<?> startClass, Class<?> rawType, Function<Class<?>, Boolean> check) {
+        Type currentClass = startClass;
+        while (currentClass instanceof Class<?> clazz) {
+            Type genericSuperclass = clazz.getGenericSuperclass();
+            if (genericSuperclass instanceof ParameterizedType parameterizedType) {
+                if (rawType.equals(parameterizedType.getRawType())) {
+                    Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
+                    if (actualTypeArguments.length > 0 && actualTypeArguments[0] instanceof Class<?> parameterizedClass && (check == null || check.apply(parameterizedClass))) {
+                        return (Class<E>) parameterizedClass;
+                    }
+                }
+            }
+            currentClass = genericSuperclass;
+        }
+        throw new IllegalArgumentException("Can't find type argument of " + startClass.getName() + " for " + rawType.getName());
+    }
+
     public static class BooleanConfigValidator extends ConfigValidatorImpl<Boolean> {
         @Override
         public Boolean stringConvert(String value) throws IllegalArgumentException {
@@ -46,23 +64,6 @@ public abstract class ConfigValidatorImpl<E> implements ConfigValidator<E> {
     }
 
     public abstract static class ListConfigValidator<E> extends ConfigValidatorImpl<List<E>> {
-
-        public static class STRING extends ListConfigValidator<String> {
-            public STRING() {
-                super(new StringConfigValidator());
-            }
-        }
-
-        public static class ENUM<E extends Enum<E>> extends ListConfigValidator<E> {
-            public ENUM() {
-                super(null);
-                this.elementValidator = new EnumConfigValidator<E>(getTypeArgument(getClass(), ENUM.class, Class::isEnum));
-            }
-
-            public ENUM(@NotNull Class<E> enumClass) {
-                super(new EnumConfigValidator<>(enumClass));
-            }
-        }
 
         protected ConfigValidator<E> elementValidator;
 
@@ -99,12 +100,29 @@ public abstract class ConfigValidatorImpl<E> implements ConfigValidator<E> {
         public List<String> valueSuggest() {
             return List.of("<NOT SUPPORT>");
         }
+
+        public static class STRING extends ListConfigValidator<String> {
+            public STRING() {
+                super(new StringConfigValidator());
+            }
+        }
+
+        public static class ENUM<E extends Enum<E>> extends ListConfigValidator<E> {
+            public ENUM() {
+                super(null);
+                this.elementValidator = new EnumConfigValidator<E>(getTypeArgument(getClass(), ENUM.class, Class::isEnum));
+            }
+
+            public ENUM(@NotNull Class<E> enumClass) {
+                super(new EnumConfigValidator<>(enumClass));
+            }
+        }
     }
 
     public static class EnumConfigValidator<E extends Enum<E>> extends ConfigValidatorImpl<E> {
 
-        protected Class<E> enumClass;
         private final List<String> enumValues;
+        protected Class<E> enumClass;
 
         public EnumConfigValidator(@NotNull Class<E> enumClass) {
             this.enumClass = enumClass;
@@ -143,23 +161,5 @@ public abstract class ConfigValidatorImpl<E> implements ConfigValidator<E> {
         public List<String> valueSuggest() {
             return enumValues;
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <E> Class<E> getTypeArgument(Class<?> startClass, Class<?> rawType, Function<Class<?>, Boolean> check) {
-        Type currentClass = startClass;
-        while (currentClass instanceof Class<?> clazz) {
-            Type genericSuperclass = clazz.getGenericSuperclass();
-            if (genericSuperclass instanceof ParameterizedType parameterizedType) {
-                if (rawType.equals(parameterizedType.getRawType())) {
-                    Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
-                    if (actualTypeArguments.length > 0 && actualTypeArguments[0] instanceof Class<?> parameterizedClass && (check == null || check.apply(parameterizedClass))) {
-                        return (Class<E>) parameterizedClass;
-                    }
-                }
-            }
-            currentClass = genericSuperclass;
-        }
-        throw new IllegalArgumentException("Can't find type argument of " + startClass.getName() + " for " + rawType.getName());
     }
 }

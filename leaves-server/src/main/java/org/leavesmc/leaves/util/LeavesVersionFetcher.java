@@ -35,23 +35,6 @@ public class LeavesVersionFetcher extends PaperVersionFetcher {
     private static final int DISTANCE_UNKNOWN = -2;
     private static final String DOWNLOAD_PAGE = "https://leavesmc.org/downloads/leaves";
 
-    @NotNull
-    @Override
-    public Component getVersionMessage(@NotNull String serverVersion) {
-        final Component updateMessage;
-        final ServerBuildInfo build = ServerBuildInfo.buildInfo();
-        if (build.buildNumber().isEmpty() && build.gitCommit().isEmpty()) {
-            updateMessage = text("You are running a development version without access to version information", color(0xFF5300));
-        } else if (build.buildNumber().isEmpty()) {
-            updateMessage = text("You are running a development version from CI", color(0xFF5300));
-        } else {
-            updateMessage = getUpdateStatusMessage("LeavesMC/Leaves", build);
-        }
-        final @Nullable Component history = this.getHistory();
-
-        return history != null ? Component.textOfChildren(updateMessage, Component.newline(), history) : updateMessage;
-    }
-
     private static Component getUpdateStatusMessage(@NotNull final String repo, @NotNull final ServerBuildInfo build) {
         int distance = fetchDistanceFromLeavesApiV2Build(build);
 
@@ -124,5 +107,22 @@ public class LeavesVersionFetcher extends PaperVersionFetcher {
             LOGGER.error("Error while parsing version", e);
             return DISTANCE_ERROR;
         }
+    }
+
+    @NotNull
+    @Override
+    public Component getVersionMessage() {
+        final Component updateMessage;
+        final ServerBuildInfo build = ServerBuildInfo.buildInfo();
+        if (build.buildNumber().isEmpty() && build.gitCommit().isEmpty()) {
+            updateMessage = text("You are running a development version without access to version information", color(0xFF5300));
+        } else if (build.buildNumber().isEmpty()) {
+            updateMessage = text("You are running a development version from CI", color(0xFF5300));
+        } else {
+            updateMessage = getUpdateStatusMessage("LeavesMC/Leaves", build);
+        }
+        final @Nullable Component history = this.getHistory();
+
+        return history != null ? Component.textOfChildren(updateMessage, Component.newline(), history) : updateMessage;
     }
 }
