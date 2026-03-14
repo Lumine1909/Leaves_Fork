@@ -1245,9 +1245,6 @@ public final class LeavesConfig {
             @GlobalConfig(value = "flush-delay-ms", lock = true)
             public int flushDelayMs = 100;
 
-            @GlobalConfig(value = "use-virtual-thread", lock = true)
-            public boolean useVirtualThread = true;
-
             @GlobalConfig(value = "compression-level", lock = true, validator = LinearCompressValidator.class)
             public int compressionLevel = 1;
 
