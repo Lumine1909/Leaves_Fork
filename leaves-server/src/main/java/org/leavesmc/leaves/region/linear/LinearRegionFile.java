@@ -29,8 +29,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.LockSupport;
 
 // LinearRegionFile_implementation_version_0_5byXymb
 // Just gonna use this string to inform other forks about updates ;-)
@@ -65,59 +66,35 @@ public class LinearRegionFile implements IRegionFile {
     private int bucketSize = 4;
     private final int compressionLevel;
     private final LinearVersion linearVersion;
-    private final Thread bindThread;
 
     private static int activeSaveThreads = 0;
 
-    public LinearRegionFile(Path path, LinearVersion linearVersion, int compressionLevel) {
-        Runnable flushCheck = () -> {
-            while (!close) {
-                synchronized (saveLock) {
-                    if (markedToSave && activeSaveThreads < LeavesConfig.region.linear.getLinearFlushThreads()) {
-                        activeSaveThreads++;
-                        Runnable flushOperation = () -> {
-                            try {
-                                flush();
-                            } catch (IOException ex) {
-                                LOGGER.error("Region file {} flush failed", this.regionFile.toAbsolutePath(), ex);
-                            } finally {
-                                synchronized (saveLock) {
-                                    activeSaveThreads--;
-                                }
-                            }
-                        };
+    private static final ScheduledExecutorService GLOBAL_FLUSH_POOL;
 
-                        Thread saveThread = LeavesConfig.region.linear.useVirtualThread ? Thread.ofVirtual().name("Linear IO - " + LinearRegionFile.this.hashCode()).unstarted(flushOperation) : Thread.ofPlatform().name("Linear IO - " + LinearRegionFile.this.hashCode()).unstarted(flushOperation);
-                        saveThread.setPriority(Thread.NORM_PRIORITY - 3);
-                        saveThread.start();
-                    }
-                }
-                LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(LeavesConfig.region.linear.flushDelayMs));
-            }
-        };
-        this.bindThread = LeavesConfig.region.linear.useVirtualThread ? Thread.ofVirtual().unstarted(flushCheck) : Thread.ofPlatform().unstarted(flushCheck);
-        this.bindThread.setName("Linear IO Schedule - " + this.hashCode());
+    static {
+        // 守护线程，服务关闭自动退出
+        GLOBAL_FLUSH_POOL = Executors.newScheduledThreadPool(1, r -> {
+            Thread t = new Thread(r, "Linear-Global-Flush-Scheduler");
+            t.setDaemon(true);
+            t.setPriority(Thread.NORM_PRIORITY - 3);
+            return t;
+        });
+    }
+
+    public LinearRegionFile(Path path, LinearVersion linearVersion, int compressionLevel) {
         this.compressionLevel = compressionLevel;
         this.regionFile = path;
         this.linearVersion = linearVersion;
-
         this.compressor = LZ4Factory.fastestInstance().fastCompressor();
         this.decompressor = LZ4Factory.fastestInstance().fastDecompressor();
     }
 
     private synchronized void openRegionFile() {
-        if (regionFileOpen) {
-            return;
-        } else {
-            regionFileOpen = true;
-        }
+        if (regionFileOpen) return;
+        regionFileOpen = true;
 
         File regionFile = new File(this.regionFile.toString());
-
-        if (!regionFile.canRead()) {
-            this.bindThread.start();
-            return;
-        }
+        if (!regionFile.canRead()) return;
 
         try {
             byte[] fileContent = Files.readAllBytes(this.regionFile);
@@ -136,8 +113,6 @@ public class LinearRegionFile implements IRegionFile {
             } else {
                 throw new RuntimeException("Invalid version: " + version + " file " + this.regionFile);
             }
-
-            this.bindThread.start();
         } catch (IOException e) {
             throw new RuntimeException("Failed to open region file " + this.regionFile, e);
         }
@@ -245,6 +220,15 @@ public class LinearRegionFile implements IRegionFile {
         synchronized (markedToSaveLock) {
             markedToSave = true;
         }
+        GLOBAL_FLUSH_POOL.schedule(this::tryFlush, LeavesConfig.region.linear.flushDelayMs, TimeUnit.MILLISECONDS);
+    }
+    private void tryFlush() {
+        if (close) return;
+        try {
+            flush();
+        } catch (IOException ex) {
+            LOGGER.error("Region file {} flush failed", this.regionFile.toAbsolutePath(), ex);
+        }
     }
 
     private synchronized boolean isMarkedToSave() {
@@ -269,15 +253,24 @@ public class LinearRegionFile implements IRegionFile {
     }
 
     public synchronized void flush() throws IOException {
-        if (!isMarkedToSave()) {
-            return;
+        if (!isMarkedToSave() || close) return;
+
+        synchronized (saveLock) {
+            if (activeSaveThreads >= LeavesConfig.region.linear.getLinearFlushThreads()) {
+                markToSave(); // 重新调度
+                return;
+            }
+            activeSaveThreads++;
         }
 
         openRegionFile();
-        if (linearVersion == LinearVersion.V1) {
-            flushLinearV1();
-        } else if (linearVersion == LinearVersion.V2) {
-            flushLinearV2();
+        try {
+            if (linearVersion == LinearVersion.V1) flushLinearV1();
+            else if (linearVersion == LinearVersion.V2) flushLinearV2();
+        } finally {
+            synchronized (saveLock) {
+                activeSaveThreads--;
+            }
         }
     }
 
@@ -596,8 +589,9 @@ public class LinearRegionFile implements IRegionFile {
     }
 
     public synchronized void close() throws IOException {
-        openRegionFile();
+        if (close) return;
         close = true;
+        openRegionFile();
         try {
             flush();
         } catch (IOException e) {
