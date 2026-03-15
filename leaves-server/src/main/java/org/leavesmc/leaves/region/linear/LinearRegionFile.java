@@ -31,6 +31,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 // LinearRegionFile_implementation_version_0_5byXymb
@@ -50,15 +51,16 @@ public class LinearRegionFile implements IRegionFile {
     private final int[] bufferUncompressedSize = new int[1024];
 
     private final long[] chunkTimestamps = new long[1024];
-    private final Object markedToSaveLock = new Object();
 
     private final LZ4Compressor compressor;
     private final LZ4FastDecompressor decompressor;
 
     public boolean regionFileOpen = false;
-    private boolean markedToSave = false;
+    private final java.util.concurrent.atomic.AtomicBoolean pendingFlush = new java.util.concurrent.atomic.AtomicBoolean(false);
 
     public Path regionFile;
+
+    private ScheduledFuture<?> flushTask;
 
     private int gridSize = 8;
     private int bucketSize = 4;
@@ -95,6 +97,14 @@ public class LinearRegionFile implements IRegionFile {
         this.linearVersion = linearVersion;
         this.compressor = LZ4Factory.fastestInstance().fastCompressor();
         this.decompressor = LZ4Factory.fastestInstance().fastDecompressor();
+
+        final long delay = LeavesConfig.region.linear.flushDelayMs;
+        this.flushTask = GLOBAL_FLUSH_POOL.scheduleAtFixedRate(
+            this::tryFlush,
+            delay,   // 初始延迟
+            delay,   // 执行周期
+            TimeUnit.MILLISECONDS
+        );
     }
 
     private synchronized void openRegionFile() {
@@ -228,32 +238,23 @@ public class LinearRegionFile implements IRegionFile {
         }
     }
 
-    private synchronized void markToSave() {
-        synchronized (markedToSaveLock) {
-            markedToSave = true;
-        }
-        if (!close) {
-            GLOBAL_FLUSH_POOL.schedule(this::tryFlush, LeavesConfig.region.linear.flushDelayMs, TimeUnit.MILLISECONDS);
-        }
-    }
-    private void tryFlush() {
+    private void markToSave() {
         if (close) {
+            return;
+        }
+        pendingFlush.set(true);
+    }
+
+    private void tryFlush() {
+        if (close || !pendingFlush.compareAndSet(true, false)) {
             return;
         }
         try {
             flush();
         } catch (IOException ex) {
             LOGGER.error("Region file {} flush failed", this.regionFile.toAbsolutePath(), ex);
-        }
-    }
-
-    private synchronized boolean isMarkedToSave() {
-        synchronized (markedToSaveLock) {
-            if (markedToSave) {
-                markedToSave = false;
-                return true;
-            }
-            return false;
+            // 刷盘失败，恢复标记，下次重试
+            pendingFlush.set(true);
         }
     }
 
@@ -269,7 +270,7 @@ public class LinearRegionFile implements IRegionFile {
     }
 
     public synchronized void flush() throws IOException {
-        if (!isMarkedToSave() || close) {
+        if (!pendingFlush.compareAndSet(true, false) || close) {
             return;
         }
 
@@ -599,13 +600,18 @@ public class LinearRegionFile implements IRegionFile {
         if (close) {
             return;
         }
+        close = true;
+
+        if (flushTask != null && !flushTask.isDone()) {
+            flushTask.cancel(false);
+        }
+
         openRegionFile();
         try {
             flush();
         } catch (IOException e) {
             throw new IOException("Region flush IOException " + e + " " + this.regionFile);
         }
-        close = true;
     }
 
 
