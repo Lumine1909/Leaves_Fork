@@ -1245,6 +1245,9 @@ public final class LeavesConfig {
             @GlobalConfig(value = "flush-delay-ms", lock = true)
             public int flushDelayMs = 100;
 
+            @GlobalConfig(value = "max-flush-per-run", lock = true)
+            public int maxFlushPerRun = 256;
+
             @GlobalConfig(value = "use-virtual-thread", lock = true)
             public boolean useVirtualThread = true;
 

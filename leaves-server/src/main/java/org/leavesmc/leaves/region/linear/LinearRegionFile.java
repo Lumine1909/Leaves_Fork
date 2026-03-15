@@ -29,10 +29,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 // LinearRegionFile_implementation_version_0_5byXymb
 // Just gonna use this string to inform other forks about updates ;-)
@@ -46,65 +49,65 @@ public class LinearRegionFile implements IRegionFile {
     private static final byte V1_VERSION = 2;
     private static final byte VERSION = 3;
 
+    private static final Queue<Runnable> FLUSH_TASKS = new ConcurrentLinkedQueue<>();
+
+    private static final ScheduledExecutorService GLOBAL_FLUSH_SCHEDULER = Executors.newSingleThreadScheduledExecutor(runnable -> {
+        final Thread thread = new Thread(runnable, "Linear-Global-Flush-Scheduler");
+        thread.setPriority(Thread.NORM_PRIORITY - 3);
+        thread.setDaemon(true);
+        return thread;
+    });
+
+    private static final ExecutorService GLOBAL_FLUSH_POOL = LeavesConfig.region.linear.useVirtualThread
+        ? Executors.newVirtualThreadPerTaskExecutor()
+        : Executors.newScheduledThreadPool(Math.max(1, LeavesConfig.region.linear.getLinearFlushThreads()), runnable -> {
+        final Thread thread = new Thread(runnable, "Linear-Global-Flush-Worker");
+        thread.setPriority(Thread.NORM_PRIORITY - 3);
+        thread.setDaemon(true);
+        return thread;
+    });
+
+    static {
+        final int delay = LeavesConfig.region.linear.flushDelayMs;
+        GLOBAL_FLUSH_SCHEDULER.scheduleAtFixedRate(() -> {
+            int limit = LeavesConfig.region.linear.maxFlushPerRun;
+            Runnable task;
+            while (limit-- > 0 && (task = FLUSH_TASKS.poll()) != null) {
+                GLOBAL_FLUSH_POOL.execute(task);
+            }
+        }, delay, delay, TimeUnit.MILLISECONDS);
+    }
+
     private byte[][] bucketBuffers;
     private final byte[][] buffer = new byte[1024][];
     private final int[] bufferUncompressedSize = new int[1024];
 
     private final long[] chunkTimestamps = new long[1024];
 
-    private final LZ4Compressor compressor;
-    private final LZ4FastDecompressor decompressor;
+    private static final LZ4Compressor compressor = LZ4Factory.fastestInstance().fastCompressor();
+    private static final LZ4FastDecompressor decompressor = LZ4Factory.fastestInstance().fastDecompressor();;
 
     public volatile boolean regionFileOpen = false;
-    private final java.util.concurrent.atomic.AtomicBoolean pendingFlush = new java.util.concurrent.atomic.AtomicBoolean(false);
 
     public Path regionFile;
-
-    private ScheduledFuture<?> flushTask;
 
     private int gridSize = 8;
     private int bucketSize = 4;
     private final int compressionLevel;
     private final LinearVersion linearVersion;
 
-    private volatile boolean close = false;
+    private volatile boolean closed = false;
 
-    // 全局线程池
-    private static final ScheduledExecutorService GLOBAL_FLUSH_POOL;
-    static {
-        final int threadCount = Math.max(1, LeavesConfig.region.linear.getLinearFlushThreads());
-        final boolean useVirtual = LeavesConfig.region.linear.useVirtualThread;
+    private final AtomicBoolean dirty = new AtomicBoolean(false);
+    private final AtomicBoolean queued = new AtomicBoolean(false);
+    private final AtomicBoolean flushing = new AtomicBoolean(false);
 
-        GLOBAL_FLUSH_POOL = Executors.newScheduledThreadPool(threadCount, runnable -> {
-            final Thread thread;
-            if (useVirtual) {
-                // 虚拟线程
-                thread = Thread.ofVirtual().unstarted(runnable);
-                thread.setName("Linear-Global-Flush-Virtual-Worker");
-            } else {
-                // 平台线程
-                thread = new Thread(runnable, "Linear-Global-Flush-Worker");
-                thread.setPriority(Thread.NORM_PRIORITY - 3);
-            }
-            thread.setDaemon(true);
-            return thread;
-        });
-    }
+    private final Runnable flushTask = this::tryFlush;
 
     public LinearRegionFile(Path path, LinearVersion linearVersion, int compressionLevel) {
         this.compressionLevel = compressionLevel;
         this.regionFile = path;
         this.linearVersion = linearVersion;
-        this.compressor = LZ4Factory.fastestInstance().fastCompressor();
-        this.decompressor = LZ4Factory.fastestInstance().fastDecompressor();
-
-        final long delay = LeavesConfig.region.linear.flushDelayMs;
-        this.flushTask = GLOBAL_FLUSH_POOL.scheduleAtFixedRate(
-            this::tryFlush,
-            delay,   // 初始延迟
-            delay,   // 执行周期
-            TimeUnit.MILLISECONDS
-        );
     }
 
     private synchronized void openRegionFile() {
@@ -239,22 +242,41 @@ public class LinearRegionFile implements IRegionFile {
     }
 
     private void markToSave() {
-        if (close) {
+        if (closed) {
             return;
         }
-        pendingFlush.set(true);
+        dirty.set(true);
+        if (queued.compareAndSet(false, true)) {
+            FLUSH_TASKS.offer(flushTask);
+        }
     }
 
     private void tryFlush() {
-        if (close || !pendingFlush.compareAndSet(true, false)) {
+        if (closed || !flushing.compareAndSet(false, true)) {
+            queued.set(false);
+            return;
+        }
+
+        boolean shouldFlush = dirty.compareAndSet(true, false);
+        queued.set(false);
+
+        if (!shouldFlush) {
+            flushing.set(false);
             return;
         }
         try {
             flush();
-        } catch (IOException ex) {
-            LOGGER.error("Region file {} flush failed", this.regionFile.toAbsolutePath(), ex);
-            // 刷盘失败，恢复标记，下次重试
-            pendingFlush.set(true);
+        } catch (Exception e) {
+            LOGGER.error("Region file {} flush failed", this.regionFile.toAbsolutePath(), e);
+            dirty.set(true);
+            if (queued.compareAndSet(false, true)) {
+                FLUSH_TASKS.offer(flushTask);
+            }
+        } finally {
+            flushing.set(false);
+            if (!closed && dirty.get() && queued.compareAndSet(false, true)) {
+                FLUSH_TASKS.offer(flushTask);
+            }
         }
     }
 
@@ -270,7 +292,7 @@ public class LinearRegionFile implements IRegionFile {
     }
 
     public synchronized void flush() throws IOException {
-        if (close) {
+        if (closed) {
             return;
         }
 
@@ -597,20 +619,16 @@ public class LinearRegionFile implements IRegionFile {
     }
 
     public synchronized void close() throws IOException {
-        if (close) {
+        if (closed) {
             return;
         }
-        close = true;
-
-        if (flushTask != null && !flushTask.isDone()) {
-            flushTask.cancel(false);
-        }
-
         openRegionFile();
         try {
             flush();
         } catch (IOException e) {
             throw new IOException("Region flush IOException " + e + " " + this.regionFile);
+        } finally {
+            closed = true;
         }
     }
 
