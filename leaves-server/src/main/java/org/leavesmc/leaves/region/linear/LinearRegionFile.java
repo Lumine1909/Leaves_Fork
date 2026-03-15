@@ -55,7 +55,7 @@ public class LinearRegionFile implements IRegionFile {
     private final LZ4Compressor compressor;
     private final LZ4FastDecompressor decompressor;
 
-    public boolean regionFileOpen = false;
+    public volatile boolean regionFileOpen = false;
     private final java.util.concurrent.atomic.AtomicBoolean pendingFlush = new java.util.concurrent.atomic.AtomicBoolean(false);
 
     public Path regionFile;
