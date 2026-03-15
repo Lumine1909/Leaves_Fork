@@ -70,24 +70,23 @@ public class LinearRegionFile implements IRegionFile {
     // 全局线程池
     private static final ScheduledExecutorService GLOBAL_FLUSH_POOL;
     static {
-        if (LeavesConfig.region.linear.useVirtualThread) {
-            GLOBAL_FLUSH_POOL = Executors.newSingleThreadScheduledExecutor(r -> {
-                Thread t = Thread.ofVirtual().unstarted(r);
-                t.setName("Linear-Global-Flush-Virtual-Scheduler");
-                t.setDaemon(true);
-                return t;
-            });
-        } else {
-            GLOBAL_FLUSH_POOL = Executors.newScheduledThreadPool(
-                Math.max(1, LeavesConfig.region.linear.getLinearFlushThreads()),
-                r -> {
-                    Thread t = new Thread(r, "Linear-Global-Flush-Worker");
-                    t.setPriority(Thread.NORM_PRIORITY - 3);
-                    t.setDaemon(true); // 守护线程，JVM退出自动终止
-                    return t;
-                }
-            );
-        }
+        final int threadCount = Math.max(1, LeavesConfig.region.linear.getLinearFlushThreads());
+        final boolean useVirtual = LeavesConfig.region.linear.useVirtualThread;
+
+        GLOBAL_FLUSH_POOL = Executors.newScheduledThreadPool(threadCount, runnable -> {
+            final Thread thread;
+            if (useVirtual) {
+                // 虚拟线程
+                thread = Thread.ofVirtual().unstarted(runnable);
+                thread.setName("Linear-Global-Flush-Virtual-Worker");
+            } else {
+                // 平台线程
+                thread = new Thread(runnable, "Linear-Global-Flush-Worker");
+                thread.setPriority(Thread.NORM_PRIORITY - 3);
+            }
+            thread.setDaemon(true);
+            return thread;
+        });
     }
 
     public LinearRegionFile(Path path, LinearVersion linearVersion, int compressionLevel) {
