@@ -270,7 +270,7 @@ public class LinearRegionFile implements IRegionFile {
     }
 
     public synchronized void flush() throws IOException {
-        if (!pendingFlush.compareAndSet(true, false) || close) {
+        if (close) {
             return;
         }
 
