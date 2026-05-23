@@ -295,18 +295,6 @@ public class ServerBot extends ServerPlayer {
             this.stopUsingItem();
             teleportTransition.postTeleportTransition().onTransition(this);
             this.isChangingDimension = false;
-
-            if (org.leavesmc.leaves.LeavesConfig.modify.netherPortalFix) {
-                final ResourceKey<Level> fromDim = fromLevel.dimension();
-                final ResourceKey<Level> toDim = level().dimension();
-                if (!((fromDim != Level.OVERWORLD || toDim != Level.NETHER) && (fromDim != Level.NETHER || toDim != Level.OVERWORLD))) {
-                    BlockPos fromPortal = org.leavesmc.leaves.util.ReturnPortalManager.findPortalAt(this, fromDim, lastPos);
-                    BlockPos toPos = this.blockPosition();
-                    if (fromPortal != null) {
-                        org.leavesmc.leaves.util.ReturnPortalManager.storeReturnPortal(this, toDim, toPos, fromPortal);
-                    }
-                }
-            }
             if (this.isBlocking()) {
                 this.stopUsingItem();
             }

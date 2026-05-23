@@ -68,6 +68,7 @@ public class ReturnPortalManager {
         return null;
     }
 
+    // Store works inversely: teleport from A(fromDim, fromPos) to B(toDim, toPos) is stored as from B(toDim toPos) to A(fromPos)
     public static void storeReturnPortal(ServerPlayer player, ResourceKey<Level> fromDim, BlockPos fromPos, BlockPos toPos) {
         ListTag portalList = getPlayerPortalList(player);
         ReturnPortal returnPortal = findReturnPortal(player, fromDim, fromPos);

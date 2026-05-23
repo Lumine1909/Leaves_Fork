@@ -1,0 +1,19 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lumine1909 <133463833+Lumine1909@users.noreply.github.com>
+Date: Sat, 23 May 2026 14:32:26 +0800
+Subject: [PATCH] Fix piercing weapon can attack in spectator mode
+
+
+diff --git a/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index fd17ac30f22490820200f13e432aec42d47eb3c4..dc76c07e92425f63c0798281783fd4ad28580f77 100644
+--- a/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -2919,7 +2919,7 @@ public class ServerGamePacketListenerImpl
+                                         if (!ServerGamePacketListenerImpl.this.player.cannotAttackWithItem(itemInHand, 5)) {
+                                             // Paper start - redirect attacks with piercing weapon
+                                             PiercingWeapon piercingWeapon = itemInHand.get(DataComponents.PIERCING_WEAPON);
+-                                            if (piercingWeapon != null) {
++                                            if (piercingWeapon != null && player.gameMode() != net.minecraft.world.level.GameType.SPECTATOR) { // Leaves - fix piercing weapon can attack in spectator mode
+                                                 piercingWeapon.attack(ServerGamePacketListenerImpl.this.player, EquipmentSlot.MAINHAND);
+                                             } else
+                                             // Paper end - redirect attacks with piercing weapon

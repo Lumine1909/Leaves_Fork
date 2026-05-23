@@ -5,10 +5,10 @@ Subject: [PATCH] Fix falling block's block location
 
 
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index 943dab97a4e22797664554b8cbcf1cb7603de12f..0c38341119ba2cc1850ffd0726396f3e4ee0ec17 100644
+index a28bbeeaf42e00e92379571aedda8aae3ef42eb3..ad36806537fc41ebee7947960969417d2cc4cc67 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
-@@ -5080,6 +5080,15 @@ public abstract class Entity implements SyncedDataHolder, DebugValueSource, Name
+@@ -5092,6 +5092,15 @@ public abstract class Entity implements SyncedDataHolder, DebugValueSource, Name
              int floor = Mth.floor(x);
              int floor1 = Mth.floor(y);
              int floor2 = Mth.floor(z);

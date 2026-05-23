@@ -26,7 +26,7 @@ This patch is Powered by CrystalCarpetAddition(https://github.com/Crystal0404/Cr
  */
 
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index 21c605ec1fc93366bc4c2d82d5ef9137a07b1d3b..d3316e443b950e709d7e56266a777d0fc1205c87 100644
+index 39631076fa2cc04fedc635026f78f3532a398669..0f3d62e18300504eeea58ecd57346245dedb2f02 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -189,7 +189,7 @@ public abstract class Entity implements SyncedDataHolder, DebugValueSource, Name
@@ -38,7 +38,7 @@ index 21c605ec1fc93366bc4c2d82d5ef9137a07b1d3b..d3316e443b950e709d7e56266a777d0f
  
      public org.bukkit.craftbukkit.entity.CraftEntity getBukkitEntity() {
          if (this.bukkitEntity == null) {
-@@ -4044,7 +4044,7 @@ public abstract class Entity implements SyncedDataHolder, DebugValueSource, Name
+@@ -4056,7 +4056,7 @@ public abstract class Entity implements SyncedDataHolder, DebugValueSource, Name
  
      public @Nullable Entity teleport(TeleportTransition teleportTransition) {
          // Paper start - Fix item duplication and teleport issues
@@ -47,7 +47,7 @@ index 21c605ec1fc93366bc4c2d82d5ef9137a07b1d3b..d3316e443b950e709d7e56266a777d0f
              LOGGER.warn("Illegal Entity Teleport {} to {}:{}", this, teleportTransition.newLevel(), teleportTransition.position(), new Throwable());
              return null;
          }
-@@ -4160,7 +4160,7 @@ public abstract class Entity implements SyncedDataHolder, DebugValueSource, Name
+@@ -4172,7 +4172,7 @@ public abstract class Entity implements SyncedDataHolder, DebugValueSource, Name
              entityx.restoreFrom(this);
              this.removeAfterChangingDimensions();
              entityx.teleportSetPosition(PositionMoveRotation.of(this), PositionMoveRotation.of(teleportTransition), teleportTransition.relatives());
@@ -56,7 +56,7 @@ index 21c605ec1fc93366bc4c2d82d5ef9137a07b1d3b..d3316e443b950e709d7e56266a777d0f
  
              for (Entity entity2 : list) {
                  entity2.startRiding(entityx, true, false);
-@@ -4277,6 +4277,7 @@ public abstract class Entity implements SyncedDataHolder, DebugValueSource, Name
+@@ -4289,6 +4289,7 @@ public abstract class Entity implements SyncedDataHolder, DebugValueSource, Name
      }
  
      public boolean canTeleport(Level fromLevel, Level toLevel) {
