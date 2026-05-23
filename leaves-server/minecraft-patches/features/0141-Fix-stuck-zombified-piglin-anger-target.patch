@@ -6,26 +6,24 @@ Subject: [PATCH] Fix stuck zombified piglin anger target
 Cleans up the running anger timer whenever neither target nor
 persistentAngerTarget points to a valid player.
 
-
 diff --git a/net/minecraft/world/entity/NeutralMob.java b/net/minecraft/world/entity/NeutralMob.java
-index c2201fde32aaf8cc02b71bc90aee40ef98438066..beaad11820274a0bbaec121bc24d1c7dd9fb0230 100644
+index c2201fde32aaf8cc02b71bc90aee40ef98438066..cd3ba62e9e1b52f75be6ed05127d9b9e59f51ee8 100644
 --- a/net/minecraft/world/entity/NeutralMob.java
 +++ b/net/minecraft/world/entity/NeutralMob.java
-@@ -80,6 +80,22 @@ public interface NeutralMob {
+@@ -80,6 +80,21 @@ public interface NeutralMob {
              if (persistentAngerTarget != null && !this.isAngry() && (target == null || !isValidPlayerTarget(target) || !updateAnger)) {
                  this.stopBeingAngry();
              }
 +
 +            // Leaves start - fix stuck zombified piglin anger target
 +            if (org.leavesmc.leaves.LeavesConfig.modify.fixStuckZombifiedPiglinAngerTarget && this.isAngry()) {
-+                boolean hasValidTargetPlayer = target != null && isValidPlayerTarget(target);
-+                if (!hasValidTargetPlayer) {
-+                    boolean hasValidPersistentPlayer = false;
++                if (target instanceof Player && !isValidPlayerTarget(target)) {
++                    boolean shouldStop = true;
 +                    if (persistentAngerTarget != null) {
 +                        LivingEntity resolved = EntityReference.getLivingEntity(persistentAngerTarget, level);
-+                        hasValidPersistentPlayer = resolved != null && isValidPlayerTarget(resolved);
++                        shouldStop = resolved instanceof Player && !isValidPlayerTarget(resolved);
 +                    }
-+                    if (!hasValidPersistentPlayer) {
++                    if (shouldStop) {
 +                        this.stopBeingAngry();
 +                    }
 +                }
@@ -33,4 +31,4 @@ index c2201fde32aaf8cc02b71bc90aee40ef98438066..beaad11820274a0bbaec121bc24d1c7d
 +            // Leaves end - fix stuck zombified piglin anger target
          }
      }
-
+ 

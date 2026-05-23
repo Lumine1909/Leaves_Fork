@@ -5,10 +5,10 @@ Subject: [PATCH] Fix EntityPortalExitEvent logic
 
 
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index 64ab6dd069f423595a66769f255fba828ad20574..4583083678004a9abe9fb5b6b1f4e7aa113e8d27 100644
+index 670a6d94b47b1db14c449cacdbc2c318866beae2..f35f3d07a9b0df3547bcdda3567dce317bf1c3b2 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
-@@ -4073,19 +4073,21 @@ public abstract class Entity implements SyncedDataHolder, DebugValueSource, Name
+@@ -4085,19 +4085,21 @@ public abstract class Entity implements SyncedDataHolder, DebugValueSource, Name
                  );
                  event.callEvent();
  

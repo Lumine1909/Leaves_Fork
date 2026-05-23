@@ -111,7 +111,7 @@ index 61646fe4b3476017a175a5d30fde53f13538ad9e..392678778dc2a036c1e3db4b6bb2800e
  
      int getContainerSize();
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index d3316e443b950e709d7e56266a777d0fc1205c87..f150ccb26cb191f4db68f1f4596eacd62343d117 100644
+index 0f3d62e18300504eeea58ecd57346245dedb2f02..db0bb84f6ba893223c450b684faa748115c55e10 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -311,7 +311,7 @@ public abstract class Entity implements SyncedDataHolder, DebugValueSource, Name
@@ -123,7 +123,7 @@ index d3316e443b950e709d7e56266a777d0fc1205c87..f150ccb26cb191f4db68f1f4596eacd6
      private final VecDeltaCodec packetPositionCodec = new VecDeltaCodec();
      public boolean needsSync;
      public @Nullable PortalProcessor portalProcess;
-@@ -5133,6 +5133,19 @@ public abstract class Entity implements SyncedDataHolder, DebugValueSource, Name
+@@ -5145,6 +5145,19 @@ public abstract class Entity implements SyncedDataHolder, DebugValueSource, Name
              this.setBoundingBox(this.makeBoundingBox());
          }
          // Paper end - Block invalid positions and bounding box
