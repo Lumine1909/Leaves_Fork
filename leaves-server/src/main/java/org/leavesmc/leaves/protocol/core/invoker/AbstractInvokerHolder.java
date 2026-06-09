@@ -67,6 +67,7 @@ public abstract class AbstractInvokerHolder<T> {
         return null;
     }
 
+    @SuppressWarnings("unchecked")
     private static <T extends Throwable> void throwOrLog(Exception e) throws T {
         Throwable t = e instanceof InvocationTargetException ex ? ex.getTargetException() : e;
         if (LeavesConfig.protocol.strictMode) {
