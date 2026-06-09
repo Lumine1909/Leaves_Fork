@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -60,31 +61,11 @@ public class LeavesProtocolManager {
     private static final List<EmptyInvokerHolder<ProtocolHandler.ReloadServer>> RELOAD_SERVER = new ArrayList<>();
     private static final List<EmptyInvokerHolder<ProtocolHandler.ReloadDataPack>> RELOAD_DATAPACK = new ArrayList<>();
 
-    @SuppressWarnings("unchecked")
     public static void init() {
         for (Class<?> clazz : getClasses("org.leavesmc.leaves.protocol")) {
-            if (LeavesCustomPayload.class.isAssignableFrom(clazz) && !clazz.equals(LeavesCustomPayload.class)) {
-                for (Field field : clazz.getDeclaredFields()) {
-                    field.setAccessible(true);
-                    if (!Modifier.isStatic(field.getModifiers())) {
-                        continue;
-                    }
-                    try {
-                        final LeavesCustomPayload.ID id = field.getAnnotation(LeavesCustomPayload.ID.class);
-                        if (id != null && field.getType().equals(Identifier.class)) {
-                            IDS.put((Class<? extends LeavesCustomPayload>) clazz, (Identifier) field.get(null));
-                        }
-                        final LeavesCustomPayload.Codec codec = field.getAnnotation(LeavesCustomPayload.Codec.class);
-                        if (codec != null && field.getType().equals(StreamCodec.class)) {
-                            CODECS.put((Class<? extends LeavesCustomPayload>) clazz, (StreamCodec<? super RegistryFriendlyByteBuf, LeavesCustomPayload>) field.get(null));
-                        }
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                }
+            if (tryLoadPayload(clazz)) {
                 continue;
             }
-
             final LeavesProtocol.Register register = clazz.getAnnotation(LeavesProtocol.Register.class);
             if (register == null) {
                 continue;
@@ -98,98 +79,12 @@ public class LeavesProtocolManager {
                 LOGGER.error("Failed to load class {}. {}", clazz.getName(), throwable);
                 return;
             }
-
             for (final Method method : clazz.getDeclaredMethods()) {
                 if (method.isBridge() || method.isSynthetic()) {
                     continue;
                 }
                 method.setAccessible(true);
-
-                final ProtocolHandler.Init init = method.getAnnotation(ProtocolHandler.Init.class);
-                if (init != null) {
-                    InitInvokerHolder holder = new InitInvokerHolder(protocol, method, init);
-                    try {
-                        holder.invoke();
-                    } catch (RuntimeException exception) {
-                        LOGGER.error("Failed to invoke init method {} in {}, {}: {}", method.getName(), clazz.getName(), exception.getCause(), exception.getMessage());
-                    }
-                    continue;
-                }
-
-                final ProtocolHandler.PayloadReceiver payloadReceiver = method.getAnnotation(ProtocolHandler.PayloadReceiver.class);
-                if (payloadReceiver != null) {
-                    PAYLOAD_RECEIVERS.put(payloadReceiver.payload(), new PayloadReceiverInvokerHolder(protocol, method, payloadReceiver));
-                    continue;
-                }
-
-                final ProtocolHandler.BytebufReceiver bytebufReceiver = method.getAnnotation(ProtocolHandler.BytebufReceiver.class);
-                if (bytebufReceiver != null) {
-                    String key = bytebufReceiver.key();
-                    BytebufReceiverInvokerHolder holder = new BytebufReceiverInvokerHolder(protocol, method, bytebufReceiver);
-                    if (bytebufReceiver.onlyNamespace()) {
-                        NAMESPACED_BYTEBUF_RECEIVERS.put(key.isEmpty() ? register.namespace() : key, holder);
-                    } else {
-                        if (key.isEmpty()) {
-                            GENERIC_BYTEBUF_RECEIVERS.add(holder);
-                        } else {
-                            if (key.contains(":")) {
-                                STRICT_BYTEBUF_RECEIVERS.put(key, holder);
-                            } else {
-                                STRICT_BYTEBUF_RECEIVERS.put(register.namespace() + ":" + key, holder);
-                            }
-                        }
-                    }
-                    continue;
-                }
-
-                final ProtocolHandler.Ticker ticker = method.getAnnotation(ProtocolHandler.Ticker.class);
-                if (ticker != null) {
-                    TICKERS.add(new EmptyInvokerHolder<>(protocol, method, ticker));
-                    continue;
-                }
-
-                final ProtocolHandler.PlayerJoin playerJoin = method.getAnnotation(ProtocolHandler.PlayerJoin.class);
-                if (playerJoin != null) {
-                    PLAYER_JOIN.add(new PlayerInvokerHolder<>(protocol, method, playerJoin));
-                    continue;
-                }
-
-                final ProtocolHandler.PlayerLeave playerLeave = method.getAnnotation(ProtocolHandler.PlayerLeave.class);
-                if (playerLeave != null) {
-                    PLAYER_LEAVE.add(new PlayerInvokerHolder<>(protocol, method, playerLeave));
-                    continue;
-                }
-
-                final ProtocolHandler.ReloadServer reloadServer = method.getAnnotation(ProtocolHandler.ReloadServer.class);
-                if (reloadServer != null) {
-                    RELOAD_SERVER.add(new EmptyInvokerHolder<>(protocol, method, reloadServer));
-                    continue;
-                }
-
-                final ProtocolHandler.ReloadDataPack reloadDataPack = method.getAnnotation(ProtocolHandler.ReloadDataPack.class);
-                if (reloadDataPack != null) {
-                    RELOAD_DATAPACK.add(new EmptyInvokerHolder<>(protocol, method, reloadDataPack));
-                    continue;
-                }
-
-                final ProtocolHandler.MinecraftRegister minecraftRegister = method.getAnnotation(ProtocolHandler.MinecraftRegister.class);
-                if (minecraftRegister != null) {
-                    String key = minecraftRegister.key();
-                    MinecraftRegisterInvokerHolder holder = new MinecraftRegisterInvokerHolder(protocol, method, minecraftRegister);
-                    if (minecraftRegister.onlyNamespace()) {
-                        NAMESPACED_MINECRAFT_REGISTER.put(key.isEmpty() ? register.namespace() : key, holder);
-                    } else {
-                        if (key.isEmpty()) {
-                            WILD_MINECRAFT_REGISTER.add(holder);
-                        } else {
-                            if (key.contains(":")) {
-                                STRICT_MINECRAFT_REGISTER.put(key, holder);
-                            } else {
-                                STRICT_MINECRAFT_REGISTER.put(register.namespace() + ":" + key, holder);
-                            }
-                        }
-                    }
-                }
+                loadHandlers(method, register, clazz, protocol);
             }
         }
         for (var idInfo : IDS.entrySet()) {
@@ -198,6 +93,80 @@ public class LeavesProtocolManager {
                 throw new IllegalArgumentException("Payload " + idInfo.getKey() + " is not configured correctly");
             }
             ID2CODEC.put(idInfo.getValue(), codec);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static boolean tryLoadPayload(Class<?> clazz) {
+        if (!LeavesCustomPayload.class.isAssignableFrom(clazz) || clazz.equals(LeavesCustomPayload.class)) {
+            return false;
+        }
+        for (Field field : clazz.getDeclaredFields()) {
+            field.setAccessible(true);
+            if (!Modifier.isStatic(field.getModifiers())) {
+                continue;
+            }
+            try {
+                final LeavesCustomPayload.ID id = field.getAnnotation(LeavesCustomPayload.ID.class);
+                if (id != null && field.getType().equals(Identifier.class)) {
+                    IDS.put((Class<? extends LeavesCustomPayload>) clazz, (Identifier) field.get(null));
+                }
+                final LeavesCustomPayload.Codec codec = field.getAnnotation(LeavesCustomPayload.Codec.class);
+                if (codec != null && field.getType().equals(StreamCodec.class)) {
+                    CODECS.put((Class<? extends LeavesCustomPayload>) clazz, (StreamCodec<? super RegistryFriendlyByteBuf, LeavesCustomPayload>) field.get(null));
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return true;
+    }
+
+    private static void loadHandlers(Method method, LeavesProtocol.Register register, Class<?> clazz, LeavesProtocol protocol) {
+        for (Annotation annotation : method.getAnnotations()) {
+            switch (annotation) {
+                case ProtocolHandler.Init init -> {
+                    InitInvokerHolder holder = new InitInvokerHolder(protocol, method, init);
+                    try {
+                        holder.invoke();
+                    } catch (RuntimeException exception) {
+                        LOGGER.error("Failed to invoke init method {} in {}, {}: {}", method.getName(), clazz.getName(), exception.getCause(), exception.getMessage());
+                    }
+                }
+                case ProtocolHandler.PayloadReceiver payloadReceiver -> PAYLOAD_RECEIVERS.put(payloadReceiver.payload(), new PayloadReceiverInvokerHolder(protocol, method, payloadReceiver));
+                case ProtocolHandler.BytebufReceiver bytebufReceiver -> {
+                    String key = bytebufReceiver.key();
+                    BytebufReceiverInvokerHolder holder = new BytebufReceiverInvokerHolder(protocol, method, bytebufReceiver);
+                    if (bytebufReceiver.onlyNamespace()) {
+                        NAMESPACED_BYTEBUF_RECEIVERS.put(key.isEmpty() ? register.namespace() : key, holder);
+                    } else if (key.isEmpty()) {
+                        GENERIC_BYTEBUF_RECEIVERS.add(holder);
+                    } else if (key.contains(":")) {
+                        STRICT_BYTEBUF_RECEIVERS.put(key, holder);
+                    } else {
+                        STRICT_BYTEBUF_RECEIVERS.put(register.namespace() + ":" + key, holder);
+                    }
+                }
+                case ProtocolHandler.MinecraftRegister minecraftRegister -> {
+                    String key = minecraftRegister.key();
+                    MinecraftRegisterInvokerHolder holder = new MinecraftRegisterInvokerHolder(protocol, method, minecraftRegister);
+                    if (minecraftRegister.onlyNamespace()) {
+                        NAMESPACED_MINECRAFT_REGISTER.put(key.isEmpty() ? register.namespace() : key, holder);
+                    } else if (key.isEmpty()) {
+                        WILD_MINECRAFT_REGISTER.add(holder);
+                    } else if (key.contains(":")) {
+                        STRICT_MINECRAFT_REGISTER.put(key, holder);
+                    } else {
+                        STRICT_MINECRAFT_REGISTER.put(register.namespace() + ":" + key, holder);
+                    }
+                }
+                case ProtocolHandler.Ticker ticker -> TICKERS.add(new EmptyInvokerHolder<>(protocol, method, ticker));
+                case ProtocolHandler.PlayerJoin playerJoin -> PLAYER_JOIN.add(new PlayerInvokerHolder<>(protocol, method, playerJoin));
+                case ProtocolHandler.PlayerLeave playerLeave -> PLAYER_LEAVE.add(new PlayerInvokerHolder<>(protocol, method, playerLeave));
+                case ProtocolHandler.ReloadServer reloadServer -> RELOAD_SERVER.add(new EmptyInvokerHolder<>(protocol, method, reloadServer));
+                case ProtocolHandler.ReloadDataPack reloadDataPack -> RELOAD_DATAPACK.add(new EmptyInvokerHolder<>(protocol, method, reloadDataPack));
+                default -> {}
+            }
         }
     }
 
@@ -364,17 +333,18 @@ public class LeavesProtocolManager {
             return;
         }
         File[] dirfiles = dir.listFiles((file) -> file.isDirectory() || file.getName().endsWith(".class"));
-        if (dirfiles != null) {
-            for (File file : dirfiles) {
-                if (file.isDirectory()) {
-                    findClassesInPackageByFile(packageName + "." + file.getName(), file.getAbsolutePath(), classes);
-                } else {
-                    String className = file.getName().substring(0, file.getName().length() - 6);
-                    try {
-                        classes.add(Class.forName(packageName + '.' + className));
-                    } catch (ClassNotFoundException exception) {
-                        LOGGER.warn("Failed to load class {}, {}: {}", className, exception.getCause(), exception.getMessage());
-                    }
+        if (dirfiles == null) {
+            return;
+        }
+        for (File file : dirfiles) {
+            if (file.isDirectory()) {
+                findClassesInPackageByFile(packageName + "." + file.getName(), file.getAbsolutePath(), classes);
+            } else {
+                String className = file.getName().substring(0, file.getName().length() - 6);
+                try {
+                    classes.add(Class.forName(packageName + '.' + className));
+                } catch (ClassNotFoundException exception) {
+                    LOGGER.warn("Failed to load class {}, {}: {}", className, exception.getCause(), exception.getMessage());
                 }
             }
         }
@@ -387,18 +357,19 @@ public class LeavesProtocolManager {
             if (name.charAt(0) == '/') {
                 name = name.substring(1);
             }
-            if (name.startsWith(packageDirName)) {
-                int idx = name.lastIndexOf('/');
-                if (idx != -1) {
-                    packageName = name.substring(0, idx).replace('/', '.');
-                }
-                if (name.endsWith(".class") && !entry.isDirectory()) {
-                    String className = name.substring(packageName.length() + 1, name.length() - 6);
-                    try {
-                        classes.add(Class.forName(packageName + '.' + className));
-                    } catch (ClassNotFoundException exception) {
-                        LOGGER.warn("Failed to load class {}, {}: {}", className, exception.getCause(), exception.getMessage());
-                    }
+            if (!name.startsWith(packageDirName)) {
+                continue;
+            }
+            int idx = name.lastIndexOf('/');
+            if (idx != -1) {
+                packageName = name.substring(0, idx).replace('/', '.');
+            }
+            if (name.endsWith(".class") && !entry.isDirectory()) {
+                String className = name.substring(packageName.length() + 1, name.length() - 6);
+                try {
+                    classes.add(Class.forName(packageName + '.' + className));
+                } catch (ClassNotFoundException exception) {
+                    LOGGER.warn("Failed to load class {}, {}: {}", className, exception.getCause(), exception.getMessage());
                 }
             }
         }
