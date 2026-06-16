@@ -7,12 +7,13 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import org.leavesmc.leaves.LeavesLogger;
-import org.leavesmc.leaves.protocol.core.invoker.BytebufReceiverInvokerHolder;
-import org.leavesmc.leaves.protocol.core.invoker.EmptyInvokerHolder;
-import org.leavesmc.leaves.protocol.core.invoker.InitInvokerHolder;
-import org.leavesmc.leaves.protocol.core.invoker.MinecraftRegisterInvokerHolder;
-import org.leavesmc.leaves.protocol.core.invoker.PayloadReceiverInvokerHolder;
-import org.leavesmc.leaves.protocol.core.invoker.PlayerInvokerHolder;
+import org.leavesmc.leaves.protocol.core.invoker.BytebufReceiverInvoker;
+import org.leavesmc.leaves.protocol.core.invoker.EmptyInvoker;
+import org.leavesmc.leaves.protocol.core.invoker.InitInvoker;
+import org.leavesmc.leaves.protocol.core.invoker.InvokerHolder;
+import org.leavesmc.leaves.protocol.core.invoker.MinecraftRegisterInvoker;
+import org.leavesmc.leaves.protocol.core.invoker.PayloadReceiverInvoker;
+import org.leavesmc.leaves.protocol.core.invoker.PlayerInvoker;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -41,25 +42,25 @@ public class LeavesProtocolManager {
 
     private static final Logger LOGGER = LeavesLogger.LOGGER;
 
-    private static final Map<Class<? extends LeavesCustomPayload>, PayloadReceiverInvokerHolder> PAYLOAD_RECEIVERS = new HashMap<>();
+    private static final Map<Class<? extends LeavesCustomPayload>, InvokerHolder<ProtocolHandler.PayloadReceiver, PayloadReceiverInvoker>> PAYLOAD_RECEIVERS = new HashMap<>();
     private static final Map<Class<? extends LeavesCustomPayload>, Identifier> IDS = new HashMap<>();
     private static final Map<Class<? extends LeavesCustomPayload>, StreamCodec<? super RegistryFriendlyByteBuf, LeavesCustomPayload>> CODECS = new HashMap<>();
     private static final Map<Identifier, StreamCodec<? super RegistryFriendlyByteBuf, LeavesCustomPayload>> ID2CODEC = new HashMap<>();
 
-    private static final Map<String, BytebufReceiverInvokerHolder> STRICT_BYTEBUF_RECEIVERS = new HashMap<>();
-    private static final Map<String, BytebufReceiverInvokerHolder> NAMESPACED_BYTEBUF_RECEIVERS = new HashMap<>();
-    private static final List<BytebufReceiverInvokerHolder> GENERIC_BYTEBUF_RECEIVERS = new ArrayList<>();
+    private static final Map<String, InvokerHolder<ProtocolHandler.BytebufReceiver, BytebufReceiverInvoker>> STRICT_BYTEBUF_RECEIVERS = new HashMap<>();
+    private static final Map<String, InvokerHolder<ProtocolHandler.BytebufReceiver, BytebufReceiverInvoker>> NAMESPACED_BYTEBUF_RECEIVERS = new HashMap<>();
+    private static final List<InvokerHolder<ProtocolHandler.BytebufReceiver, BytebufReceiverInvoker>> GENERIC_BYTEBUF_RECEIVERS = new ArrayList<>();
 
-    private static final Map<String, MinecraftRegisterInvokerHolder> STRICT_MINECRAFT_REGISTER = new HashMap<>();
-    private static final Map<String, MinecraftRegisterInvokerHolder> NAMESPACED_MINECRAFT_REGISTER = new HashMap<>();
-    private static final List<MinecraftRegisterInvokerHolder> WILD_MINECRAFT_REGISTER = new ArrayList<>();
+    private static final Map<String, InvokerHolder<ProtocolHandler.MinecraftRegister, MinecraftRegisterInvoker>> STRICT_MINECRAFT_REGISTER = new HashMap<>();
+    private static final Map<String, InvokerHolder<ProtocolHandler.MinecraftRegister, MinecraftRegisterInvoker>> NAMESPACED_MINECRAFT_REGISTER = new HashMap<>();
+    private static final List<InvokerHolder<ProtocolHandler.MinecraftRegister, MinecraftRegisterInvoker>> WILD_MINECRAFT_REGISTER = new ArrayList<>();
 
-    private static final List<EmptyInvokerHolder<ProtocolHandler.Ticker>> TICKERS = new ArrayList<>();
+    private static final List<InvokerHolder<ProtocolHandler.Ticker, EmptyInvoker>> TICKERS = new ArrayList<>();
 
-    private static final List<PlayerInvokerHolder<ProtocolHandler.PlayerJoin>> PLAYER_JOIN = new ArrayList<>();
-    private static final List<PlayerInvokerHolder<ProtocolHandler.PlayerLeave>> PLAYER_LEAVE = new ArrayList<>();
-    private static final List<EmptyInvokerHolder<ProtocolHandler.ReloadServer>> RELOAD_SERVER = new ArrayList<>();
-    private static final List<EmptyInvokerHolder<ProtocolHandler.ReloadDataPack>> RELOAD_DATAPACK = new ArrayList<>();
+    private static final List<InvokerHolder<ProtocolHandler.PlayerJoin, PlayerInvoker>> PLAYER_JOIN = new ArrayList<>();
+    private static final List<InvokerHolder<ProtocolHandler.PlayerLeave, PlayerInvoker>> PLAYER_LEAVE = new ArrayList<>();
+    private static final List<InvokerHolder<ProtocolHandler.ReloadServer, EmptyInvoker>> RELOAD_SERVER = new ArrayList<>();
+    private static final List<InvokerHolder<ProtocolHandler.ReloadDataPack, EmptyInvoker>> RELOAD_DATAPACK = new ArrayList<>();
 
     public static void init() {
         for (Class<?> clazz : getClasses("org.leavesmc.leaves.protocol")) {
@@ -126,17 +127,17 @@ public class LeavesProtocolManager {
         for (Annotation annotation : method.getAnnotations()) {
             switch (annotation) {
                 case ProtocolHandler.Init init -> {
-                    InitInvokerHolder holder = new InitInvokerHolder(protocol, method, init);
+                    var holder = InitInvoker.createHolder(protocol, method, init);
                     try {
-                        holder.invoke();
+                        holder.run(true, InitInvoker::invoke);
                     } catch (RuntimeException exception) {
                         LOGGER.error("Failed to invoke init method {} in {}, {}: {}", method.getName(), clazz.getName(), exception.getCause(), exception.getMessage());
                     }
                 }
-                case ProtocolHandler.PayloadReceiver payloadReceiver -> PAYLOAD_RECEIVERS.put(payloadReceiver.payload(), new PayloadReceiverInvokerHolder(protocol, method, payloadReceiver));
+                case ProtocolHandler.PayloadReceiver payloadReceiver -> PAYLOAD_RECEIVERS.put(payloadReceiver.payload(), PayloadReceiverInvoker.createHolder(protocol, method, payloadReceiver));
                 case ProtocolHandler.BytebufReceiver bytebufReceiver -> {
                     String key = bytebufReceiver.key();
-                    BytebufReceiverInvokerHolder holder = new BytebufReceiverInvokerHolder(protocol, method, bytebufReceiver);
+                    var holder = BytebufReceiverInvoker.createHolder(protocol, method, bytebufReceiver);
                     if (bytebufReceiver.onlyNamespace()) {
                         NAMESPACED_BYTEBUF_RECEIVERS.put(key.isEmpty() ? register.namespace() : key, holder);
                     } else if (key.isEmpty()) {
@@ -149,7 +150,7 @@ public class LeavesProtocolManager {
                 }
                 case ProtocolHandler.MinecraftRegister minecraftRegister -> {
                     String key = minecraftRegister.key();
-                    MinecraftRegisterInvokerHolder holder = new MinecraftRegisterInvokerHolder(protocol, method, minecraftRegister);
+                    var holder = MinecraftRegisterInvoker.createHolder(protocol, method, minecraftRegister);
                     if (minecraftRegister.onlyNamespace()) {
                         NAMESPACED_MINECRAFT_REGISTER.put(key.isEmpty() ? register.namespace() : key, holder);
                     } else if (key.isEmpty()) {
@@ -160,11 +161,11 @@ public class LeavesProtocolManager {
                         STRICT_MINECRAFT_REGISTER.put(register.namespace() + ":" + key, holder);
                     }
                 }
-                case ProtocolHandler.Ticker ticker -> TICKERS.add(new EmptyInvokerHolder<>(protocol, method, ticker));
-                case ProtocolHandler.PlayerJoin playerJoin -> PLAYER_JOIN.add(new PlayerInvokerHolder<>(protocol, method, playerJoin));
-                case ProtocolHandler.PlayerLeave playerLeave -> PLAYER_LEAVE.add(new PlayerInvokerHolder<>(protocol, method, playerLeave));
-                case ProtocolHandler.ReloadServer reloadServer -> RELOAD_SERVER.add(new EmptyInvokerHolder<>(protocol, method, reloadServer));
-                case ProtocolHandler.ReloadDataPack reloadDataPack -> RELOAD_DATAPACK.add(new EmptyInvokerHolder<>(protocol, method, reloadDataPack));
+                case ProtocolHandler.Ticker ticker -> TICKERS.add(EmptyInvoker.createHolder(protocol, method, ticker));
+                case ProtocolHandler.PlayerJoin playerJoin -> PLAYER_JOIN.add(PlayerInvoker.createHolder(protocol, method, playerJoin));
+                case ProtocolHandler.PlayerLeave playerLeave -> PLAYER_LEAVE.add(PlayerInvoker.createHolder(protocol, method, playerLeave));
+                case ProtocolHandler.ReloadServer reloadServer -> RELOAD_SERVER.add(EmptyInvoker.createHolder(protocol, method, reloadServer));
+                case ProtocolHandler.ReloadDataPack reloadDataPack -> RELOAD_DATAPACK.add(EmptyInvoker.createHolder(protocol, method, reloadDataPack));
                 default -> {}
             }
         }
@@ -199,26 +200,26 @@ public class LeavesProtocolManager {
     }
 
     public static void handlePayload(IdentifierSelector selector, LeavesCustomPayload payload) {
-        PayloadReceiverInvokerHolder holder;
+        InvokerHolder<ProtocolHandler.PayloadReceiver, PayloadReceiverInvoker> holder;
         if ((holder = PAYLOAD_RECEIVERS.get(payload.getClass())) != null) {
-            holder.invoke(selector, payload);
+            holder.run(invoker -> invoker.invoke(selector, payload));
         }
     }
 
     public static boolean handleBytebuf(IdentifierSelector selector, Identifier location, ByteBuf buf) {
         RegistryFriendlyByteBuf buf1 = ProtocolUtils.decorate(buf);
-        BytebufReceiverInvokerHolder holder;
+        InvokerHolder<ProtocolHandler.BytebufReceiver, BytebufReceiverInvoker> holder;
         if ((holder = STRICT_BYTEBUF_RECEIVERS.get(location.toString())) != null) {
-            holder.invoke(selector, buf1);
+            holder.run(invoker -> invoker.invoke(selector, buf1));
             return true;
         }
         if ((holder = NAMESPACED_BYTEBUF_RECEIVERS.get(location.getNamespace())) != null) {
-            if (holder.invoke(selector, buf1)) {
+            if (holder.result(invoker -> invoker.invoke(selector, buf1))) {
                 return true;
             }
         }
         for (var holder1 : GENERIC_BYTEBUF_RECEIVERS) {
-            if (holder1.invoke(selector, buf1)) {
+            if (holder1.result(invoker -> invoker.invoke(selector, buf1))) {
                 return true;
             }
         }
@@ -228,7 +229,7 @@ public class LeavesProtocolManager {
     public static void handleTick(long tickCount) {
         for (var tickerInfo : TICKERS) {
             if (tickCount % tickerInfo.owner().tickerInterval(tickerInfo.handler().tickerId()) == 0) {
-                tickerInfo.invoke();
+                tickerInfo.run(EmptyInvoker::invoke);
             }
         }
     }
@@ -236,25 +237,25 @@ public class LeavesProtocolManager {
     public static void handlePlayerJoin(ServerPlayer player) {
         sendKnownId(player);
         for (var join : PLAYER_JOIN) {
-            join.invoke(player);
+            join.run(invoker -> invoker.invoke(player));
         }
     }
 
     public static void handlePlayerLeave(ServerPlayer player) {
         for (var leave : PLAYER_LEAVE) {
-            leave.invoke(player);
+            leave.run(invoker -> invoker.invoke(player));
         }
     }
 
     public static void handleServerReload() {
         for (var reload : RELOAD_SERVER) {
-            reload.invoke();
+            reload.run(EmptyInvoker::invoke);
         }
     }
 
     public static void handleDataPackReload() {
         for (var reload : RELOAD_DATAPACK) {
-            reload.invoke();
+            reload.run(EmptyInvoker::invoke);
         }
     }
 
@@ -265,15 +266,15 @@ public class LeavesProtocolManager {
         }
 
         for (var wildHolder : WILD_MINECRAFT_REGISTER) {
-            wildHolder.invoke(selector, location);
+            wildHolder.run(invoker -> invoker.invoke(selector, location));
         }
 
-        MinecraftRegisterInvokerHolder holder;
+        InvokerHolder<ProtocolHandler.MinecraftRegister, MinecraftRegisterInvoker> holder;
         if ((holder = STRICT_MINECRAFT_REGISTER.get(location.toString())) != null) {
-            holder.invoke(selector, location);
+            holder.run(invoker -> invoker.invoke(selector, location));
         }
         if ((holder = NAMESPACED_MINECRAFT_REGISTER.get(location.getNamespace())) != null) {
-            holder.invoke(selector, location);
+            holder.run(invoker -> invoker.invoke(selector, location));
         }
     }
 
