@@ -5,7 +5,7 @@ Subject: [PATCH] Async keepalive
 
 
 diff --git a/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-index cb9a4f669ae2ff772206bffde9255d239f47e1ea..8a2a9abf61cf6ae6ea8ecbbc6d9c2155f98b4a5b 100644
+index cb9a4f669ae2ff772206bffde9255d239f47e1ea..87c2bbf6db1b041c96c886679862e6a4daaa7ca2 100644
 --- a/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 @@ -46,6 +46,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
@@ -55,12 +55,13 @@ index cb9a4f669ae2ff772206bffde9255d239f47e1ea..8a2a9abf61cf6ae6ea8ecbbc6d9c2155
 +    private void handleAsyncKeepAlive(ServerboundKeepAlivePacket packet) {
 +        long now = System.nanoTime();
 +        long timeoutNanos = java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(org.leavesmc.leaves.LeavesConfig.mics.asyncKeepalive.getTimeoutMillis());
-+        for (io.papermc.paper.util.KeepAlive.PendingKeepAlive pending : this.keepAlive.pendingKeepAlives) {
++        for (java.util.Iterator<io.papermc.paper.util.KeepAlive.PendingKeepAlive> itr = this.keepAlive.pendingKeepAlives.iterator(); itr.hasNext(); ) {
++            io.papermc.paper.util.KeepAlive.PendingKeepAlive pending = itr.next();
 +            if (pending.challengeId() == packet.getId()) {
 +                if ((now - pending.txTimeNS()) > timeoutNanos) {
++                    itr.remove();
 +                    return;
 +                }
-+
 +                io.papermc.paper.util.KeepAlive.KeepAliveResponse response = new io.papermc.paper.util.KeepAlive.KeepAliveResponse(pending.txTimeNS(), now);
 +                this.keepAlive.pingCalculator1m.update(response);
 +                this.keepAlive.pingCalculator5s.update(response);
@@ -69,7 +70,6 @@ index cb9a4f669ae2ff772206bffde9255d239f47e1ea..8a2a9abf61cf6ae6ea8ecbbc6d9c2155
 +                return;
 +            }
 +        }
-+        this.keepAlive.pendingKeepAlives.removeIf(pending -> (now - pending.txTimeNS()) > timeoutNanos);
 +    }
 +    // Leaves end - async keepalive
 +
