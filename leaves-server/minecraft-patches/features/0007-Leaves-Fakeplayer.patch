@@ -550,10 +550,10 @@ index bbf0100341dfd50cfe76bf4f47225e6b43dc17bd..47851ec2ee99aa7f42fa1baee0fab36d
          final boolean yZero = movement.y == 0.0;
          final boolean zZero = movement.z == 0.0;
 diff --git a/net/minecraft/world/entity/LivingEntity.java b/net/minecraft/world/entity/LivingEntity.java
-index 6f49b5e5888a6296b929e465a5ef87dc49bd4516..8968ca0dffc42bd74c5159e5d602361dd016ef88 100644
+index 07b3d08d9c2f9e978379de5a6b846a828029e2fa..02d4f20992e099e6398c457d0cecce1d147354b9 100644
 --- a/net/minecraft/world/entity/LivingEntity.java
 +++ b/net/minecraft/world/entity/LivingEntity.java
-@@ -3222,7 +3222,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+@@ -3223,7 +3223,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
      private void travelRidden(Player player, Vec3 travelVector) {
          Vec3 riddenInput = this.getRiddenInput(player, travelVector);
          this.tickRidden(player, riddenInput);
@@ -562,7 +562,7 @@ index 6f49b5e5888a6296b929e465a5ef87dc49bd4516..8968ca0dffc42bd74c5159e5d602361d
              this.setSpeed(this.getRiddenSpeed(player));
              this.travel(riddenInput);
          } else {
-@@ -4130,7 +4130,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+@@ -4131,7 +4131,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
          // Paper start - lag compensate eating
          // we add 1 to the expected time to avoid lag compensating when we should not
          final boolean shouldLagCompensate = this.useItem.has(DataComponents.FOOD) && this.eatStartTime != -1 && (System.nanoTime() - this.eatStartTime) > ((1L + this.totalEatTimeTicks) * 50L * (1000L * 1000L));
@@ -571,7 +571,7 @@ index 6f49b5e5888a6296b929e465a5ef87dc49bd4516..8968ca0dffc42bd74c5159e5d602361d
              this.useItemRemaining = 0;
              // Paper end - lag compensate eating
              this.completeUsingItem();
-@@ -4315,6 +4315,23 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+@@ -4316,6 +4316,23 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
          this.stopUsingItem();
      }
  
@@ -718,7 +718,7 @@ index f51dbc45204c2727122aeb6b5002216e3200680d..b5837ee5e291ae23bd8613c4c1856c14
          FeatureFlagSet featureFlagSet = player.level().enabledFeatures();
          return carriedItem.isItemEnabled(featureFlagSet) && carriedItem.overrideStackedOnOther(slot, action, player)
 diff --git a/net/minecraft/world/item/ItemStack.java b/net/minecraft/world/item/ItemStack.java
-index ed06cffe8a5eba2ca4a34ade81f8185e21d7b651..3a719a98118c275422f4fc61b07d471dd503656f 100644
+index f29629388dc898829fa8e5646f470f836a999e8d..4ccd0f5bbd41648b89efcdb5e6ce033bd9681616 100644
 --- a/net/minecraft/world/item/ItemStack.java
 +++ b/net/minecraft/world/item/ItemStack.java
 @@ -448,7 +448,7 @@ public final class ItemStack implements DataComponentHolder {

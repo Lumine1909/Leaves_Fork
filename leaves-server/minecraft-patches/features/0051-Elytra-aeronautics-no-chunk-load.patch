@@ -62,7 +62,7 @@ index 3e7c6eceddf36dd38dcd9713dfefe0ada85815f8..051e3bac4f406df379ec1fc335f351b1
                                  if (!allowMovement) {
                                      io.papermc.paper.event.player.PlayerFailMoveEvent event = fireFailMove(io.papermc.paper.event.player.PlayerFailMoveEvent.FailReason.CLIPPED_INTO_BLOCK,
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index 0e5210ee87e31c9d23488d80eb832d9a1bcf91b9..38bb637d2392268037be4facffc669546a1847b8 100644
+index 1181a292ae5f94fceb3eee4c371adedb0b4f8542..8f4ff561d15e40519531874fe1a2ede2357bcce7 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -1142,7 +1142,13 @@ public abstract class Entity implements SyncedDataHolder, DebugValueSource, Name
@@ -89,10 +89,10 @@ index 0e5210ee87e31c9d23488d80eb832d9a1bcf91b9..38bb637d2392268037be4facffc66954
      }
  
 diff --git a/net/minecraft/world/entity/LivingEntity.java b/net/minecraft/world/entity/LivingEntity.java
-index 8adf7835f71688ba319f053208d02b810097b06e..c2442d69ce547719467dd94fcf6fd209a3612ac2 100644
+index 9389e3568baf689e6a81bdc6ee7af29254ae191f..03eb5353a6aea4b3966fc726dcb0507b5057505e 100644
 --- a/net/minecraft/world/entity/LivingEntity.java
 +++ b/net/minecraft/world/entity/LivingEntity.java
-@@ -3443,6 +3443,11 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+@@ -3444,6 +3444,11 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
              this.fallFlyTicks++;
          } else {
              this.fallFlyTicks = 0;
