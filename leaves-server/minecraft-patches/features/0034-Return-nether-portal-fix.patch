@@ -6,7 +6,7 @@ Subject: [PATCH] Return nether portal fix
 Part of this patch is powered by NetherPortalFix(https://github.com/TwelveIterationMods/NetherPortalFix)
 
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index 47851ec2ee99aa7f42fa1baee0fab36dee3f6e7b..66af9627ec2e2d16753a0ce6a0bcbd60f840031b 100644
+index 47851ec2ee99aa7f42fa1baee0fab36dee3f6e7b..7de3eb2ebedb9413e89184a368fa93f64fbe7e30 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -3503,6 +3503,18 @@ public abstract class Entity implements SyncedDataHolder, DebugValueSource, Name
@@ -14,7 +14,7 @@ index 47851ec2ee99aa7f42fa1baee0fab36dee3f6e7b..66af9627ec2e2d16753a0ce6a0bcbd60
                              )
                           {
 +                             // Leaves start - nether portal fix
-+                             if (org.leavesmc.leaves.LeavesConfig.modify.netherPortalFix && this instanceof net.minecraft.server.level.ServerPlayer player) {
++                             if (org.leavesmc.leaves.LeavesConfig.modify.netherPortalFix && this instanceof ServerPlayer player) {
 +                                 final ResourceKey<Level> fromDim = player.level().dimension();
 +                                 final ResourceKey<Level> toDim = level.dimension();
 +                                 if ((fromDim == Level.OVERWORLD && toDim == Level.NETHER) || (fromDim == Level.NETHER && toDim == Level.OVERWORLD)) {
@@ -29,7 +29,7 @@ index 47851ec2ee99aa7f42fa1baee0fab36dee3f6e7b..66af9627ec2e2d16753a0ce6a0bcbd60
                          }
                      }
 diff --git a/net/minecraft/world/entity/LivingEntity.java b/net/minecraft/world/entity/LivingEntity.java
-index 6657cc6dd1fa32aafa65e79a2b2b439ffba889c6..8adf7835f71688ba319f053208d02b810097b06e 100644
+index 86d57bda6fb5e3819621f9123d32db4a8a3be2a4..9389e3568baf689e6a81bdc6ee7af29254ae191f 100644
 --- a/net/minecraft/world/entity/LivingEntity.java
 +++ b/net/minecraft/world/entity/LivingEntity.java
 @@ -262,7 +262,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
