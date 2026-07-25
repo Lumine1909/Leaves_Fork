@@ -26,10 +26,10 @@ index 47cd33bce908744e64356b585853d6a8ecf82443..e1c982cd2aa36168b077d9db727ef997
              loadFromJson(stream, output);
          } catch (IOException | JsonParseException e) {
 diff --git a/net/minecraft/server/Main.java b/net/minecraft/server/Main.java
-index ea0a134cece92a019003ce2a50620c81abab6508..498dd2fbf5c7412622953e9a2a0886691865ba83 100644
+index aa545c922a9dd548f83deba99e8166d092a961dc..4e13526957dc44d91b76d27ad2ee2d3ed358628d 100644
 --- a/net/minecraft/server/Main.java
 +++ b/net/minecraft/server/Main.java
-@@ -157,6 +157,8 @@ public class Main {
+@@ -166,6 +166,8 @@ public class Main {
                  return;
              }
  
@@ -39,7 +39,7 @@ index ea0a134cece92a019003ce2a50620c81abab6508..498dd2fbf5c7412622953e9a2a088669
              String awtException = io.papermc.paper.util.ServerEnvironment.awtDependencyCheck();
              if (awtException != null) {
 diff --git a/net/minecraft/server/dedicated/DedicatedServer.java b/net/minecraft/server/dedicated/DedicatedServer.java
-index 29d4460c7f0a3d5034b55c4c55df99a59505c270..4d78365766058fc543290bae77bb2cdc8383b3d8 100644
+index 09efa89ef112d3cc6f72c585d77f79fc31aa811a..3b091e311172e816045fe45c7e1071702ee67a9e 100644
 --- a/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -253,6 +253,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface

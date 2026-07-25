@@ -1,6 +1,6 @@
 --- a/paper-api/build.gradle.kts
 +++ b/paper-api/build.gradle.kts
-@@ -91,19 +_,33 @@
+@@ -94,19 +_,33 @@
      testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.0.3")
  }
  
@@ -17,30 +17,28 @@
          java {
              srcDir(generatedDir)
 +            srcDir(file("../paper-api/src/main/java"))
-         }
++        }
 +        resources {
 +            srcDir(file("../paper-api/src/main/resources"))
 +        }
-     }
++    }
 +    test {
 +        java {
 +            srcDir(file("../paper-api/src/test/java"))
 +        }
 +        resources {
 +            srcDir(file("../paper-api/src/test/resources"))
-+        }
-+    }
+         }
+     }
  }
 +// Leaves end - build change
  
  val outgoingVariants = arrayOf("runtimeElements", "apiElements", "sourcesElements", "javadocElements")
  val mainCapability = "${project.group}:${project.name}:${project.version}"
-@@ -164,7 +_,17 @@
-     outputFile.set(layout.buildDirectory.file("apiVersioning.json"))
-     projectVersion.set(project.version.toString())
+@@ -169,6 +_,16 @@
      apiVersion.set(rootProject.providers.gradleProperty("apiVersion"))
-+}
-+
+ }
+ 
 +// Leaves start - hide irrelevant compilation warnings
 +tasks.withType<JavaCompile> {
 +    val compilerArgs = options.compilerArgs
@@ -48,12 +46,13 @@
 +    compilerArgs.add("-Xlint:-removal")
 +    compilerArgs.add("-Xlint:-dep-ann")
 +    compilerArgs.add("--add-modules=jdk.incubator.vector") // Leaves - SIMD support
- }
++}
 +// Leaves end - hide irrelevant compilation warnings
- 
++
  tasks.jar {
      from(generateApiVersioningFile.flatMap { it.outputFile })
-@@ -183,7 +_,7 @@
+     manifest {
+@@ -186,7 +_,7 @@
  
  tasks.withType<Javadoc>().configureEach {
      val options = options as StandardJavadocDocletOptions
@@ -62,7 +61,7 @@
      options.use()
      options.isDocFilesSubDirs = true
      options.links(
-@@ -217,16 +_,18 @@
+@@ -213,16 +_,18 @@
      }
  
      // workaround for https://github.com/gradle/gradle/issues/4046

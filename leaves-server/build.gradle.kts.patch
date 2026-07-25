@@ -51,7 +51,7 @@
      )
  }
  
-@@ -86,7 +_,21 @@
+@@ -86,7 +_,22 @@
      }
  }
  
@@ -147,7 +147,7 @@
              "Build-Number" to (build ?: ""),
              "Build-Time" to buildTime.toString(),
              "Git-Branch" to gitBranch,
-@@ -237,7 +_,7 @@
+@@ -246,7 +_,7 @@
      jvmArgumentProviders.add(provider)
  }
  
@@ -156,7 +156,7 @@
  idea {
      module {
          generatedSourceDirs.add(generatedDir.toFile())
-@@ -275,6 +_,10 @@
+@@ -284,6 +_,10 @@
      }
  
      args("--nogui")
@@ -167,7 +167,7 @@
      systemProperty("net.kyori.adventure.text.warnWhenLegacyFormattingDetected", true)
      if (providers.gradleProperty("paper.runDisableWatchdog").getOrElse("false") == "true") {
          systemProperty("disable.watchdog", true)
-@@ -309,25 +_,20 @@
+@@ -320,25 +_,20 @@
      classpath(tasks.createBundlerJar.flatMap { it.outputZip })
      mainClass.set(null as String?)
  }
@@ -182,8 +182,7 @@
 +    classpath(tasks.createLeavesclipJar.flatMap { it.outputZip })
      mainClass.set(null as String?)
  }
-+// Leaves end - build change
- 
+-
 -fill {
 -    project("paper")
 -    versionFamily(paperweight.minecraftVersion.map { it.split(".", "-").takeWhile { part -> part.toIntOrNull() != null }.take(2).joinToString(".") })
@@ -199,6 +198,8 @@
 -            }
 -        }
 -    }
++// Leaves end - build change
++
 +// Leaves start - create config file
 +tasks.registerRunTask("createLeavesConfig") {
 +    description = "Create a new leaves.yml"
