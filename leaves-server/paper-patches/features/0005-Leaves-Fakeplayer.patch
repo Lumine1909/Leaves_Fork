@@ -85,7 +85,7 @@ index acc8f3d67573f40b8d408d51fbc2a018e5fb21ad..d7703d6d53cebe60f108c9b2a589e537
 +    // Leaves end - Bot API
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 335de83ba3e42ab0ac80d53a4efd0423e9a9965d..de0811ffe1ca4b22f2cd838f5cd7b6088c3a718e 100644
+index f3f068011abd8c6585463169d50634bf42a09497..76ff668fcf8451789c8a0c458adf90233d36802c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -247,7 +247,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
@@ -109,7 +109,7 @@ index 335de83ba3e42ab0ac80d53a4efd0423e9a9965d..de0811ffe1ca4b22f2cd838f5cd7b608
              HumanEntity bukkitEntity = human.getBukkitEntity();
  
              if ((bukkitEntity != null) && (bukkitEntity instanceof Player)) {
-@@ -1599,7 +1599,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1604,7 +1604,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      public void playSound(final net.kyori.adventure.sound.Sound sound) {
          org.spigotmc.AsyncCatcher.catchOp("play sound"); // Paper
          final long seed = sound.seed().orElseGet(this.world.getRandom()::nextLong);
@@ -118,7 +118,7 @@ index 335de83ba3e42ab0ac80d53a4efd0423e9a9965d..de0811ffe1ca4b22f2cd838f5cd7b608
              player.connection.send(io.papermc.paper.adventure.PaperAdventure.asSoundPacket(sound, player.getX(), player.getY(), player.getZ(), seed, null));
          }
      }
-@@ -1627,7 +1627,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1632,7 +1632,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
          org.spigotmc.AsyncCatcher.catchOp("play sound"); // Paper
          final long seed = sound.seed().orElseGet(this.getHandle().getRandom()::nextLong);
          if (emitter == net.kyori.adventure.sound.Sound.Emitter.self()) {
@@ -127,7 +127,7 @@ index 335de83ba3e42ab0ac80d53a4efd0423e9a9965d..de0811ffe1ca4b22f2cd838f5cd7b608
                  player.connection.send(io.papermc.paper.adventure.PaperAdventure.asSoundPacket(sound, player, seed, null));
              }
          } else if (emitter instanceof CraftEntity craftEntity) {
-@@ -1748,7 +1748,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1753,7 +1753,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
              Preconditions.checkArgument(particle.getDataType().isInstance(data), "data (%s) should be %s", data.getClass(), particle.getDataType());
          }
          this.getHandle().sendParticlesSource(
