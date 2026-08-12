@@ -123,7 +123,7 @@ public class BotDataStorage {
         return Optional.empty();
     }
 
-    private void saveBotList() {
+    void saveBotList() {
         try {
             if (this.botListFile.exists() && this.botListFile.isFile()) {
                 if (!this.botListFile.delete()) {

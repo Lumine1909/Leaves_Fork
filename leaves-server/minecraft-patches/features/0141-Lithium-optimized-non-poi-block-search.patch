@@ -12,7 +12,7 @@ As part of: Lithium (https://github.com/CaffeineMC/lithium)
 Licensed under: LGPL-3.0 (https://www.gnu.org/licenses/lgpl-3.0.html)
 
 diff --git a/net/minecraft/world/entity/ai/goal/MoveToBlockGoal.java b/net/minecraft/world/entity/ai/goal/MoveToBlockGoal.java
-index c6e9b155c2341c13d569f28f54f0c1d2d7313676..9d1481ff607a13dc3fd7c9ec22ee9016f65d3d2d 100644
+index c6e9b155c2341c13d569f28f54f0c1d2d7313676..33edd6fc8d8e6928d6d70f09d26c92751e2b3297 100644
 --- a/net/minecraft/world/entity/ai/goal/MoveToBlockGoal.java
 +++ b/net/minecraft/world/entity/ai/goal/MoveToBlockGoal.java
 @@ -5,7 +5,7 @@ import net.minecraft.core.BlockPos;
@@ -24,7 +24,7 @@ index c6e9b155c2341c13d569f28f54f0c1d2d7313676..9d1481ff607a13dc3fd7c9ec22ee9016
      private static final int GIVE_UP_TICKS = 1200;
      private static final int STAY_TICKS = 1200;
      private static final int INTERVAL_TICKS = 200;
-@@ -133,4 +133,170 @@ public abstract class MoveToBlockGoal extends Goal {
+@@ -133,4 +133,171 @@ public abstract class MoveToBlockGoal extends Goal {
      }
  
      protected abstract boolean isValidTarget(LevelReader level, BlockPos pos);
@@ -186,6 +186,7 @@ index c6e9b155c2341c13d569f28f54f0c1d2d7313676..9d1481ff607a13dc3fd7c9ec22ee9016
 +
 +            if (closestFound < Integer.MAX_VALUE) {
 +                // Vanilla uses the mutable pos, no need to create immutable copy
++                this.mob.movingTarget = foundPos == BlockPos.ZERO ? null : foundPos.immutable(); // Paper
 +                this.blockPos = foundPos;
 +                return true;
 +            }
