@@ -5,7 +5,7 @@ Subject: [PATCH] Cache item max stack size
 
 
 diff --git a/net/minecraft/core/component/PatchedDataComponentMap.java b/net/minecraft/core/component/PatchedDataComponentMap.java
-index 56f0573bb74ea1e5f09851d421b83db23594441e..94f0e8641aa3efabd41190abcb537c2009ae9d0d 100644
+index 56f0573bb74ea1e5f09851d421b83db23594441e..358dee8e91421e23cd54122ae4d4d6dca5e3daf8 100644
 --- a/net/minecraft/core/component/PatchedDataComponentMap.java
 +++ b/net/minecraft/core/component/PatchedDataComponentMap.java
 @@ -27,6 +27,7 @@ public final class PatchedDataComponentMap implements DataComponentMap, org.leav
@@ -21,7 +21,7 @@ index 56f0573bb74ea1e5f09851d421b83db23594441e..94f0e8641aa3efabd41190abcb537c20
              optional = (Optional<T>)this.patch.put(component, Optional.ofNullable(value));
          }
 -
-+        recalculateMaxStackSize(type); // Leaves - cache item max stack size
++        recalculateMaxStackSize(component); // Leaves - cache item max stack size
          return optional != null ? optional.orElse(object) : object;
      }
  
@@ -30,7 +30,7 @@ index 56f0573bb74ea1e5f09851d421b83db23594441e..94f0e8641aa3efabd41190abcb537c20
              optional = (Optional<? extends T>)this.patch.remove(component);
          }
 -
-+        recalculateMaxStackSize(type); // Leaves - cache item max stack size
++        recalculateMaxStackSize(component); // Leaves - cache item max stack size
          return (T)(optional != null ? optional.orElse(null) : object);
      }
  
