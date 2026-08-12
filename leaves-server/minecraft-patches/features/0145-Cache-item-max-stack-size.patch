@@ -91,18 +91,19 @@ index 56f0573bb74ea1e5f09851d421b83db23594441e..358dee8e91421e23cd54122ae4d4d6dc
 +    // Leaves end - cache item max stack size
  }
 diff --git a/net/minecraft/world/item/ItemStack.java b/net/minecraft/world/item/ItemStack.java
-index 7cee8071c5f872c256ac1762bd22948fca1ccd30..8e79164cd56f4ad67410ae33f611198e898c6ed0 100644
+index 7cee8071c5f872c256ac1762bd22948fca1ccd30..b580579448f52aa851f053c9a4c2e6e99d76dae0 100644
 --- a/net/minecraft/world/item/ItemStack.java
 +++ b/net/minecraft/world/item/ItemStack.java
-@@ -1542,4 +1542,11 @@ public final class ItemStack implements DataComponentHolder, ChangePublisher<net
-         }
+@@ -601,9 +601,11 @@ public final class ItemStack implements DataComponentHolder, ChangePublisher<net
+         return itemStack;
      }
-     // Leaves end - Lithium Sleeping Block Entity
-+
+ 
 +    // Leaves start - cache item max stack size
-+    @Override
-+    public int getMaxStackSize() {
+     public int getMaxStackSize() {
+-        return this.getOrDefault(DataComponents.MAX_STACK_SIZE, 1);
 +        return components.getMaxStackSize();
-+    }
+     }
 +    // Leaves end - cache item max stack size
- }
+ 
+     public boolean isStackable() {
+         return this.getMaxStackSize() > 1 && (!this.isDamageableItem() || !this.isDamaged());
