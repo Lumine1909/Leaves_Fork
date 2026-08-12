@@ -5,51 +5,51 @@ Subject: [PATCH] Cache item max stack size
 
 
 diff --git a/net/minecraft/core/component/PatchedDataComponentMap.java b/net/minecraft/core/component/PatchedDataComponentMap.java
-index 1c9218686c50d59200c53d164a33debc41b1de8b..6ae08f2175dee9d88b79eb67a67b57b1ae39f770 100644
+index 56f0573bb74ea1e5f09851d421b83db23594441e..94f0e8641aa3efabd41190abcb537c2009ae9d0d 100644
 --- a/net/minecraft/core/component/PatchedDataComponentMap.java
 +++ b/net/minecraft/core/component/PatchedDataComponentMap.java
-@@ -29,6 +29,7 @@ public final class PatchedDataComponentMap implements DataComponentMap, org.leav
+@@ -27,6 +27,7 @@ public final class PatchedDataComponentMap implements DataComponentMap, org.leav
          this.prototype = prototype;
          this.patch = patch;
          this.copyOnWrite = copyOnWrite;
 +        recalculateMaxStackSize(null); // Leaves - cache item max stack size
      }
  
-     public static PatchedDataComponentMap fromPatch(final DataComponentMap prototype, final DataComponentPatch patch) {
-@@ -75,7 +76,7 @@ public final class PatchedDataComponentMap implements DataComponentMap, org.leav
+     public static PatchedDataComponentMap fromPatch(DataComponentMap prototype, DataComponentPatch patch) {
+@@ -74,7 +75,7 @@ public final class PatchedDataComponentMap implements DataComponentMap, org.leav
          } else {
-             lastValue = (Optional<T>)this.patch.put(type, Optional.ofNullable(value));
+             optional = (Optional<T>)this.patch.put(component, Optional.ofNullable(value));
          }
 -
 +        recalculateMaxStackSize(type); // Leaves - cache item max stack size
-         return lastValue != null ? lastValue.orElse(defaultValue) : defaultValue;
+         return optional != null ? optional.orElse(object) : object;
      }
  
-@@ -92,7 +93,7 @@ public final class PatchedDataComponentMap implements DataComponentMap, org.leav
+@@ -91,7 +92,7 @@ public final class PatchedDataComponentMap implements DataComponentMap, org.leav
          } else {
-             lastValue = (Optional<? extends T>)this.patch.remove(type);
+             optional = (Optional<? extends T>)this.patch.remove(component);
          }
 -
 +        recalculateMaxStackSize(type); // Leaves - cache item max stack size
-         return (T)(lastValue != null ? lastValue.orElse(null) : defaultValue);
+         return (T)(optional != null ? optional.orElse(null) : object);
      }
  
-@@ -102,6 +103,7 @@ public final class PatchedDataComponentMap implements DataComponentMap, org.leav
+@@ -101,6 +102,7 @@ public final class PatchedDataComponentMap implements DataComponentMap, org.leav
          for (Entry<DataComponentType<?>, Optional<?>> entry : Reference2ObjectMaps.fastIterable(patch.map)) {
              this.applyPatch(entry.getKey(), entry.getValue());
          }
 +        recalculateMaxStackSize(null); // Leaves -
      }
  
-     private void applyPatch(final DataComponentType<?> type, final Optional<?> value) {
-@@ -117,23 +119,27 @@ public final class PatchedDataComponentMap implements DataComponentMap, org.leav
+     private void applyPatch(DataComponentType<?> component, Optional<?> value) {
+@@ -116,23 +118,27 @@ public final class PatchedDataComponentMap implements DataComponentMap, org.leav
          } else {
-             this.patch.remove(type);
+             this.patch.remove(component);
          }
 +        recalculateMaxStackSize(null); // Leaves - cache item max stack size
      }
  
-     public void restorePatch(final DataComponentPatch patch) {
+     public void restorePatch(DataComponentPatch patch) {
          this.ensureMapOwnership();
          this.patch.clear();
          this.patch.putAll(patch.map);
@@ -62,15 +62,15 @@ index 1c9218686c50d59200c53d164a33debc41b1de8b..6ae08f2175dee9d88b79eb67a67b57b1
 +        recalculateMaxStackSize(null); // Leaves - cache item max stack size
      }
  
-     public void setAll(final DataComponentMap components) {
-         for (TypedDataComponent<?> entry : components) {
-             entry.applyTo(this);
+     public void setAll(DataComponentMap map) {
+         for (TypedDataComponent<?> typedDataComponent : map) {
+             typedDataComponent.applyTo(this);
          }
 +        recalculateMaxStackSize(null); // Leaves - cache item max stack size
      }
  
      private void ensureMapOwnership() {
-@@ -252,4 +258,19 @@ public final class PatchedDataComponentMap implements DataComponentMap, org.leav
+@@ -258,4 +264,19 @@ public final class PatchedDataComponentMap implements DataComponentMap, org.leav
          return 0;
      }
      // Leaves end - Lithium Sleeping Block Entity
@@ -91,10 +91,10 @@ index 1c9218686c50d59200c53d164a33debc41b1de8b..6ae08f2175dee9d88b79eb67a67b57b1
 +    // Leaves end - cache item max stack size
  }
 diff --git a/net/minecraft/world/item/ItemStack.java b/net/minecraft/world/item/ItemStack.java
-index 2cb3347dbad74c19fd1fe1b4a4a28ab354fad555..4285aed698859310c14714d7b5eb5782c0edef62 100644
+index 7cee8071c5f872c256ac1762bd22948fca1ccd30..8e79164cd56f4ad67410ae33f611198e898c6ed0 100644
 --- a/net/minecraft/world/item/ItemStack.java
 +++ b/net/minecraft/world/item/ItemStack.java
-@@ -1507,4 +1507,11 @@ public final class ItemStack implements DataComponentHolder, ItemInstance, Chang
+@@ -1542,4 +1542,11 @@ public final class ItemStack implements DataComponentHolder, ChangePublisher<net
          }
      }
      // Leaves end - Lithium Sleeping Block Entity
