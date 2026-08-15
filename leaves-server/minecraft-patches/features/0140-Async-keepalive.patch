@@ -5,7 +5,7 @@ Subject: [PATCH] Async keepalive
 
 
 diff --git a/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-index cb9a4f669ae2ff772206bffde9255d239f47e1ea..1302216863ca23c63e34163f0b7f9def9aa7d8fc 100644
+index cb9a4f669ae2ff772206bffde9255d239f47e1ea..6fc014db08d28dc597d0e6ba6123999adc8aeb76 100644
 --- a/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 @@ -46,6 +46,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
@@ -47,36 +47,47 @@ index cb9a4f669ae2ff772206bffde9255d239f47e1ea..1302216863ca23c63e34163f0b7f9def
          // Paper start - improve keepalives
          long now = System.nanoTime();
          io.papermc.paper.util.KeepAlive.PendingKeepAlive pending = this.keepAlive.pendingKeepAlives.peek();
-@@ -141,6 +152,28 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -141,6 +152,39 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
          // Paper end - improve keepalives
      }
  
 +    // Leaves start - async keepalive
 +    private void handleAsyncKeepAlive(ServerboundKeepAlivePacket packet) {
 +        long now = System.nanoTime();
-+        long timeoutNanos = java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(org.leavesmc.leaves.LeavesConfig.mics.asyncKeepalive.getTimeoutMillis());
-+        for (java.util.Iterator<io.papermc.paper.util.KeepAlive.PendingKeepAlive> itr = this.keepAlive.pendingKeepAlives.iterator(); itr.hasNext(); ) {
-+            io.papermc.paper.util.KeepAlive.PendingKeepAlive pending = itr.next();
-+            if (pending.challengeId() == packet.getId()) {
-+                itr.remove();
-+                if ((now - pending.txTimeNS()) > timeoutNanos) {
-+                    return;
++        io.papermc.paper.util.KeepAlive.PendingKeepAlive pending = this.keepAlive.pendingKeepAlives.peek();
++        if (pending != null && pending.challengeId() == packet.getId()) {
++            this.keepAlive.pendingKeepAlives.remove(pending);
++            updatePing(new io.papermc.paper.util.KeepAlive.KeepAliveResponse(pending.txTimeNS(), now));
++            return;
++        }
++        org.leavesmc.leaves.network.AsyncKeepaliveManager.execute(() -> {
++            long timeoutNanos = java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(org.leavesmc.leaves.LeavesConfig.mics.asyncKeepalive.getTimeoutMillis());
++            for (java.util.Iterator<io.papermc.paper.util.KeepAlive.PendingKeepAlive> itr = this.keepAlive.pendingKeepAlives.iterator(); itr.hasNext(); ) {
++                io.papermc.paper.util.KeepAlive.PendingKeepAlive pendingKa = itr.next();
++                if (pendingKa.challengeId() != packet.getId()) {
++                    continue;
 +                }
-+                io.papermc.paper.util.KeepAlive.KeepAliveResponse response = new io.papermc.paper.util.KeepAlive.KeepAliveResponse(pending.txTimeNS(), now);
-+                this.keepAlive.pingCalculator1m.update(response);
-+                this.keepAlive.pingCalculator5s.update(response);
-+                this.latency = this.keepAlive.pingCalculator5s.getAvgLatencyMS();
-+                this.lastKeepAliveResponse = now;
++                itr.remove();
++                if ((now - pendingKa.txTimeNS()) < timeoutNanos) {
++                    updatePing(new io.papermc.paper.util.KeepAlive.KeepAliveResponse(pendingKa.txTimeNS(), now));
++                }
 +                return;
 +            }
-+        }
++        });
++    }
++
++    private void updatePing(io.papermc.paper.util.KeepAlive.KeepAliveResponse response) {
++        this.keepAlive.pingCalculator1m.update(response);
++        this.keepAlive.pingCalculator5s.update(response);
++        this.latency = this.keepAlive.pingCalculator5s.getAvgLatencyMS();
++        this.lastKeepAliveResponse = response.rxTimeNS();
 +    }
 +    // Leaves end - async keepalive
 +
      @Override
      public void handlePong(ServerboundPongPacket packet) {
      }
-@@ -278,6 +311,13 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -278,6 +322,13 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
      protected void keepConnectionAlive() {
          Profiler.get().push("keepAlive");
          long millis = Util.getMillis();
@@ -90,7 +101,7 @@ index cb9a4f669ae2ff772206bffde9255d239f47e1ea..1302216863ca23c63e34163f0b7f9def
          // Paper start - improve keepalives
          if (this.checkIfClosed(millis) && !this.processedDisconnect) {
              long currTime = System.nanoTime();
-@@ -301,6 +341,29 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -301,6 +352,29 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
          Profiler.get().pop();
      }
  
