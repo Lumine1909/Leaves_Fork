@@ -5,7 +5,7 @@ Subject: [PATCH] Async keepalive
 
 
 diff --git a/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-index cb9a4f669ae2ff772206bffde9255d239f47e1ea..6fc014db08d28dc597d0e6ba6123999adc8aeb76 100644
+index cb9a4f669ae2ff772206bffde9255d239f47e1ea..c5dfad53a034e592d512cd06775eef9c57bd13a6 100644
 --- a/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 @@ -46,6 +46,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
@@ -47,7 +47,7 @@ index cb9a4f669ae2ff772206bffde9255d239f47e1ea..6fc014db08d28dc597d0e6ba6123999a
          // Paper start - improve keepalives
          long now = System.nanoTime();
          io.papermc.paper.util.KeepAlive.PendingKeepAlive pending = this.keepAlive.pendingKeepAlives.peek();
-@@ -141,6 +152,39 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -141,6 +152,38 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
          // Paper end - improve keepalives
      }
  
@@ -60,20 +60,19 @@ index cb9a4f669ae2ff772206bffde9255d239f47e1ea..6fc014db08d28dc597d0e6ba6123999a
 +            updatePing(new io.papermc.paper.util.KeepAlive.KeepAliveResponse(pending.txTimeNS(), now));
 +            return;
 +        }
-+        org.leavesmc.leaves.network.AsyncKeepaliveManager.execute(() -> {
-+            long timeoutNanos = java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(org.leavesmc.leaves.LeavesConfig.mics.asyncKeepalive.getTimeoutMillis());
-+            for (java.util.Iterator<io.papermc.paper.util.KeepAlive.PendingKeepAlive> itr = this.keepAlive.pendingKeepAlives.iterator(); itr.hasNext(); ) {
-+                io.papermc.paper.util.KeepAlive.PendingKeepAlive pendingKa = itr.next();
-+                if (pendingKa.challengeId() != packet.getId()) {
-+                    continue;
-+                }
-+                itr.remove();
-+                if ((now - pendingKa.txTimeNS()) < timeoutNanos) {
-+                    updatePing(new io.papermc.paper.util.KeepAlive.KeepAliveResponse(pendingKa.txTimeNS(), now));
-+                }
-+                return;
++
++        long timeoutNanos = java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(org.leavesmc.leaves.LeavesConfig.mics.asyncKeepalive.getTimeoutMillis());
++        for (java.util.Iterator<io.papermc.paper.util.KeepAlive.PendingKeepAlive> itr = this.keepAlive.pendingKeepAlives.iterator(); itr.hasNext(); ) {
++            io.papermc.paper.util.KeepAlive.PendingKeepAlive pendingKa = itr.next();
++            if (pendingKa.challengeId() != packet.getId()) {
++                continue;
 +            }
-+        });
++            this.keepAlive.pendingKeepAlives.remove(pendingKa);
++            if ((now - pendingKa.txTimeNS()) < timeoutNanos) {
++                updatePing(new io.papermc.paper.util.KeepAlive.KeepAliveResponse(pendingKa.txTimeNS(), now));
++            }
++            return;
++        }
 +    }
 +
 +    private void updatePing(io.papermc.paper.util.KeepAlive.KeepAliveResponse response) {
@@ -87,7 +86,7 @@ index cb9a4f669ae2ff772206bffde9255d239f47e1ea..6fc014db08d28dc597d0e6ba6123999a
      @Override
      public void handlePong(ServerboundPongPacket packet) {
      }
-@@ -278,6 +322,13 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -278,6 +321,13 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
      protected void keepConnectionAlive() {
          Profiler.get().push("keepAlive");
          long millis = Util.getMillis();
@@ -101,7 +100,7 @@ index cb9a4f669ae2ff772206bffde9255d239f47e1ea..6fc014db08d28dc597d0e6ba6123999a
          // Paper start - improve keepalives
          if (this.checkIfClosed(millis) && !this.processedDisconnect) {
              long currTime = System.nanoTime();
-@@ -301,6 +352,29 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -301,6 +351,29 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
          Profiler.get().pop();
      }
  
