@@ -197,7 +197,6 @@ public class JadeProtocol implements LeavesProtocol {
 
     @ProtocolHandler.PayloadReceiver(payload = RequestBlockPayload.class)
     public static void requestBlockData(ServerPlayer player, RequestBlockPayload payload) {
-
         Bukkit.getGlobalRegionScheduler().run(MinecraftInternalPlugin.INSTANCE, (task) -> {
             BlockPos pos = payload.data().hit().getBlockPos();
             double maxDistance = Mth.square(player.blockInteractionRange() + 21);
