@@ -5,7 +5,7 @@ Subject: [PATCH] Async keepalive
 
 
 diff --git a/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-index cb9a4f669ae2ff772206bffde9255d239f47e1ea..87c2bbf6db1b041c96c886679862e6a4daaa7ca2 100644
+index cb9a4f669ae2ff772206bffde9255d239f47e1ea..1302216863ca23c63e34163f0b7f9def9aa7d8fc 100644
 --- a/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 @@ -46,6 +46,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
@@ -58,8 +58,8 @@ index cb9a4f669ae2ff772206bffde9255d239f47e1ea..87c2bbf6db1b041c96c886679862e6a4
 +        for (java.util.Iterator<io.papermc.paper.util.KeepAlive.PendingKeepAlive> itr = this.keepAlive.pendingKeepAlives.iterator(); itr.hasNext(); ) {
 +            io.papermc.paper.util.KeepAlive.PendingKeepAlive pending = itr.next();
 +            if (pending.challengeId() == packet.getId()) {
++                itr.remove();
 +                if ((now - pending.txTimeNS()) > timeoutNanos) {
-+                    itr.remove();
 +                    return;
 +                }
 +                io.papermc.paper.util.KeepAlive.KeepAliveResponse response = new io.papermc.paper.util.KeepAlive.KeepAliveResponse(pending.txTimeNS(), now);
