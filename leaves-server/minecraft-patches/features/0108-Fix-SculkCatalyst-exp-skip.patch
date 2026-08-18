@@ -1,0 +1,81 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: violetc <58360096+s-yh-china@users.noreply.github.com>
+Date: Sun, 6 Apr 2025 10:42:45 +0800
+Subject: [PATCH] Fix SculkCatalyst exp skip
+
+
+diff --git a/net/minecraft/server/level/ServerPlayer.java b/net/minecraft/server/level/ServerPlayer.java
+index cb3b8fcabd453a3f0b3a83952883c5e58681f5f5..5a8153ea67c63e10160e9d04d3a50ee331f8c49e 100644
+--- a/net/minecraft/server/level/ServerPlayer.java
++++ b/net/minecraft/server/level/ServerPlayer.java
+@@ -1213,7 +1213,7 @@ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patc
+         }
+ 
+         // SPIGOT-5478 must be called manually now
+-        if (event.shouldDropExperience()) this.dropExperience(this.level(), source.getEntity()); // Paper - tie to event
++        if (shouldDropExperience(event.shouldDropExperience(), event.forceUseEventDropStatus())) this.dropExperience(this.level(), source.getEntity()); // Paper - tie to event // Leaves - exp fix
+         // we clean the player's inventory after the EntityDeathEvent is called so plugins can get the exact state of the inventory.
+         if (!event.getKeepInventory()) {
+             // Paper start - PlayerDeathEvent#getItemsToKeep
+@@ -1260,6 +1260,15 @@ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patc
+         this.connection.markClientUnloadedAfterDeath();
+     }
+ 
++    // Leaves start - exp fix
++    private boolean shouldDropExperience(final boolean eventResult, final boolean forceUseEvent) {
++        if (forceUseEvent) {
++            return eventResult;
++        }
++        return !this.wasExperienceConsumed() && eventResult;
++    }
++    // Leaves end - exp fix
++
+     protected void tellNeutralMobsThatIDied() { // Leaves private -> protected
+         AABB aabb = new AABB(this.blockPosition()).inflate(32.0, 10.0, 32.0);
+         this.level()
+diff --git a/net/minecraft/world/entity/LivingEntity.java b/net/minecraft/world/entity/LivingEntity.java
+index ba11d5727ebfd6d8becbba2d143cd2b50a4632ab..93a4ec52134837a8843633035e7b72da0aca8cdf 100644
+--- a/net/minecraft/world/entity/LivingEntity.java
++++ b/net/minecraft/world/entity/LivingEntity.java
+@@ -297,6 +297,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+     // CraftBukkit start
+     public int expToDrop;
+     public @Nullable List<DefaultDrop> deathDropItems = null;
++    public int expToReward; // Leaves - exp fix
+     public final org.bukkit.craftbukkit.attribute.CraftAttributeMap craftAttributes;
+     public boolean collides = true;
+     public Set<UUID> collidableExemptions = new java.util.HashSet<>();
+@@ -1923,7 +1924,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+         }
+ 
+         this.dropEquipment(level);
+-        this.postDeathEventTasks.add(() -> this.dropExperience(level, source.getEntity())); // Paper
++        this.postDeathEventTasks.add(() -> { if (!this.wasExperienceConsumed()) this.dropExperience(level, source.getEntity()); }); // Paper // Leaves - exp fix: skip if consumed by sculk
+     }
+ 
+     protected void dropEquipment(final ServerLevel level) {
+@@ -1935,7 +1936,9 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+                 this.isAlwaysExperienceDropper()
+                     || this.lastHurtByPlayerMemoryTime > 0 && this.shouldDropExperience() && level.getGameRules().get(GameRules.MOB_DROPS)
+             )) {
+-            return this.getExperienceReward(level, killer); // CraftBukkit
++            int reward = this.getExperienceReward(level, killer); // CraftBukkit
++            this.expToReward = reward; // Leaves - exp fix: cache for SculkCatalyst
++            return reward;
+         }
+         return 0; // CraftBukkit
+     }
+diff --git a/net/minecraft/world/level/block/entity/SculkCatalystBlockEntity.java b/net/minecraft/world/level/block/entity/SculkCatalystBlockEntity.java
+index 4aa2d141eba2596e782fc4ab4890c5e2d80eb811..c0cd55c00fe29efdb44e61a8fa990e4d8781cc10 100644
+--- a/net/minecraft/world/level/block/entity/SculkCatalystBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/SculkCatalystBlockEntity.java
+@@ -97,8 +97,7 @@ public class SculkCatalystBlockEntity extends BlockEntity implements GameEventLi
+         public boolean handleGameEvent(final ServerLevel level, final Holder<GameEvent> event, final GameEvent.Context context, final Vec3 sourcePosition) {
+             if (event.is(GameEvent.ENTITY_DIE) && context.sourceEntity() instanceof LivingEntity mob) {
+                 if (!mob.wasExperienceConsumed()) {
+-                    DamageSource lastDamageSource = mob.getLastDamageSource();
+-                    int experienceWouldDrop = mob.getExperienceReward(level, Optionull.map(lastDamageSource, DamageSource::getEntity));
++                    int experienceWouldDrop = mob.expToReward; // Leaves - exp fix
+                     if (mob.shouldDropExperience() && experienceWouldDrop > 0) {
+                         this.sculkSpreader.addCursors(BlockPos.containing(sourcePosition.relative(Direction.UP, 0.5)), experienceWouldDrop);
+                         this.tryAwardItSpreadsAdvancement(level, mob);

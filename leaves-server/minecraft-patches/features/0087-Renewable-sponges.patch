@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: violetc <58360096+s-yh-china@users.noreply.github.com>
+Date: Mon, 22 Jan 2024 11:41:13 +0800
+Subject: [PATCH] Renewable sponges
+
+
+diff --git a/net/minecraft/world/entity/monster/Guardian.java b/net/minecraft/world/entity/monster/Guardian.java
+index 4dfab4dece54d14fb5648e44b2779b0f4ee89727..51938678fb3a04ca6b0ebd2ff195a718bad459d6 100644
+--- a/net/minecraft/world/entity/monster/Guardian.java
++++ b/net/minecraft/world/entity/monster/Guardian.java
+@@ -441,6 +441,28 @@ public class Guardian extends Monster {
+         }
+     }
+ 
++    // Leaves start - renewable sponges
++    @Override
++    public void thunderHit(net.minecraft.server.level.ServerLevel level, net.minecraft.world.entity.LightningBolt lightning) {
++        if (org.leavesmc.leaves.LeavesConfig.modify.renewableSponges && !this.isRemoved() && !(this instanceof ElderGuardian)) {
++            ElderGuardian elderGuardian = new ElderGuardian(net.minecraft.world.entity.EntityTypes.ELDER_GUARDIAN, this.level());
++            elderGuardian.snapTo(this.getX(), this.getY(), this.getZ(), this.getYRot(), this.getXRot());
++            elderGuardian.finalizeSpawn(level, level.getCurrentDifficultyAt(elderGuardian.blockPosition()), EntitySpawnReason.CONVERSION, null);
++            elderGuardian.setNoAi(this.isNoAi());
++
++            if (this.hasCustomName()) {
++                elderGuardian.setCustomName(this.getCustomName());
++                elderGuardian.setCustomNameVisible(this.isCustomNameVisible());
++            }
++
++            this.level().addFreshEntity(elderGuardian);
++            this.discard();
++        } else {
++            super.thunderHit(level, lightning);
++        }
++    }
++    // Leaves end - renewable sponges
++
+     private static class GuardianMoveControl<T extends Guardian> extends MoveControl<T> {
+         public GuardianMoveControl(final T guardian) {
+             super(guardian);

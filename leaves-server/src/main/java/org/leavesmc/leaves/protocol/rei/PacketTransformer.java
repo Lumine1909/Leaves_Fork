@@ -6,7 +6,7 @@ import io.netty.buffer.Unpooled;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.protocol.common.custom.DiscardedPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import org.leavesmc.leaves.LeavesLogger;
 
@@ -28,13 +28,13 @@ public class PacketTransformer {
 
     private final Map<UUID, PartData> cache = Collections.synchronizedMap(new HashMap<>());
 
-    public static DiscardedPayload wrapRei(ResourceLocation location, FriendlyByteBuf buf) {
+    public static DiscardedPayload wrapRei(Identifier location, FriendlyByteBuf buf) {
         FriendlyByteBuf newBuf = new FriendlyByteBuf(Unpooled.buffer());
         newBuf.writeByteArray(ByteBufUtil.getBytes(buf));
         return new DiscardedPayload(location, ByteBufUtil.getBytes(newBuf));
     }
 
-    public void inbound(ResourceLocation id, RegistryFriendlyByteBuf buf, ServerPlayer player, BiConsumer<ResourceLocation, RegistryFriendlyByteBuf> consumer) {
+    public void inbound(Identifier id, RegistryFriendlyByteBuf buf, ServerPlayer player, BiConsumer<Identifier, RegistryFriendlyByteBuf> consumer) {
         UUID key = player.getUUID();
         PartData data;
         buf.readVarInt();
@@ -43,17 +43,17 @@ public class PacketTransformer {
                 int partsNum = buf.readInt();
                 data = new PartData(id, partsNum);
                 if (cache.put(key, data) != null) {
-                    LeavesLogger.LOGGER.warning("Received invalid START packet for SplitPacketTransformer with packet id " + id);
+                    LeavesLogger.LOGGER.warn("Received invalid START packet for SplitPacketTransformer with packet id {}", id);
                 }
                 buf.retain();
                 data.parts.add(buf);
             }
             case PART -> {
                 if ((data = cache.get(key)) == null) {
-                    LeavesLogger.LOGGER.warning("Received invalid PART packet for SplitPacketTransformer with packet id " + id);
+                    LeavesLogger.LOGGER.warn("Received invalid PART packet for SplitPacketTransformer with packet id {}", id);
                     buf.release();
                 } else if (!data.id.equals(id)) {
-                    LeavesLogger.LOGGER.warning("Received invalid PART packet for SplitPacketTransformer with packet id " + id + ", id in cache is {}" + data.id);
+                    LeavesLogger.LOGGER.warn("Received invalid PART packet for SplitPacketTransformer with packet id {}, id in cache is {}", id, data.id);
                     buf.release();
                     for (RegistryFriendlyByteBuf part : data.parts) {
                         if (part != buf) {
@@ -68,10 +68,10 @@ public class PacketTransformer {
             }
             case END -> {
                 if ((data = cache.get(key)) == null) {
-                    LeavesLogger.LOGGER.warning("Received invalid END packet for SplitPacketTransformer with packet id {}" + id);
+                    LeavesLogger.LOGGER.warn("Received invalid END packet for SplitPacketTransformer with packet id {}", id);
                     buf.release();
                 } else if (!data.id.equals(id)) {
-                    LeavesLogger.LOGGER.warning("Received invalid END packet for SplitPacketTransformer with packet id " + id + ", id in cache is {}" + data.id);
+                    LeavesLogger.LOGGER.warn("Received invalid END packet for SplitPacketTransformer with packet id {}, id in cache is{}", id, data.id);
                     buf.release();
                     for (RegistryFriendlyByteBuf part : data.parts) {
                         if (part != buf) {
@@ -87,7 +87,7 @@ public class PacketTransformer {
                     return;
                 }
                 if (data.parts.size() != data.partsNum) {
-                    LeavesLogger.LOGGER.warning("Received invalid END packet for SplitPacketTransformer with packet id " + id + " with size " + data.parts + ", parts expected is {}" + data.partsNum);
+                    LeavesLogger.LOGGER.warn("Received invalid END packet for SplitPacketTransformer with packet id {} with size {}, parts expected is {}", id, data.parts, data.partsNum);
                     for (RegistryFriendlyByteBuf part : data.parts) {
                         if (part != buf) {
                             part.release();
@@ -105,7 +105,7 @@ public class PacketTransformer {
         }
     }
 
-    public void outbound(ResourceLocation id, RegistryFriendlyByteBuf buf, BiConsumer<ResourceLocation, RegistryFriendlyByteBuf> consumer) {
+    public void outbound(Identifier id, RegistryFriendlyByteBuf buf, BiConsumer<Identifier, RegistryFriendlyByteBuf> consumer) {
         int maxSize = 1048576 - 1 - 20 - id.toString().getBytes(StandardCharsets.UTF_8).length;
         if (buf.readableBytes() <= maxSize) {
             ByteBuf stateBuf = Unpooled.buffer(1);
@@ -135,11 +135,11 @@ public class PacketTransformer {
     }
 
     private static class PartData {
-        private final ResourceLocation id;
+        private final Identifier id;
         private final int partsNum;
         private final List<RegistryFriendlyByteBuf> parts;
 
-        public PartData(ResourceLocation id, int partsNum) {
+        public PartData(Identifier id, int partsNum) {
             this.id = id;
             this.partsNum = partsNum;
             this.parts = new ArrayList<>();

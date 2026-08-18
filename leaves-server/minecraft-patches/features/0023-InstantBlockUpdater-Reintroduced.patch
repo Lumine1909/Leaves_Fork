@@ -1,0 +1,59 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: violetc <58360096+s-yh-china@users.noreply.github.com>
+Date: Tue, 29 Nov 2022 14:54:56 +0800
+Subject: [PATCH] InstantBlockUpdater Reintroduced
+
+This patch is Powered by Carpet-TIS-Addition(https://github.com/plusls/Carpet-TIS-Addition)
+
+diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
+index 749d4ce7c8ecb83da7f1ee8240d16be58aea2073..540ad85654f4ddae3a991c8eeb08b2b7191d9e72 100644
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -939,12 +939,13 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+         // Paper - rewrite chunk system
+         profiler.pop();
+         profiler.push("debugSynchronizers");
+-        if (this.debugSynchronizers.hasAnySubscriberFor(DebugSubscriptions.NEIGHBOR_UPDATES)) {
+-            this.neighborUpdater
+-                .setDebugListener(blockPos -> this.debugSynchronizers.broadcastEventToTracking(blockPos, DebugSubscriptions.NEIGHBOR_UPDATES, blockPos));
+-        } else {
+-            this.neighborUpdater.setDebugListener(null);
+-        }
++        if (this.neighborUpdater instanceof net.minecraft.world.level.redstone.CollectingNeighborUpdater cnu) { // Leaves start - instantBlockUpdaterReintroduced
++            if (this.debugSynchronizers.hasAnySubscriberFor(DebugSubscriptions.NEIGHBOR_UPDATES)) {
++                cnu.setDebugListener(blockPos -> this.debugSynchronizers.broadcastEventToTracking(blockPos, DebugSubscriptions.NEIGHBOR_UPDATES, blockPos));
++            } else {
++                cnu.setDebugListener(null);
++            }
++        } // Leaves end - instantBlockUpdaterReintroduced
+ 
+         this.debugSynchronizers.tick(this.server.debugSubscribers());
+         profiler.pop();
+diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
+index 9286d9bcf3ec4069e77d3133f3d7bf29b2370c5a..83476906f85e955de18b34655d6c943743cb1249 100644
+--- a/net/minecraft/world/level/Level.java
++++ b/net/minecraft/world/level/Level.java
+@@ -120,7 +120,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+         .add(new ExplosionParticleInfo(ParticleTypes.SMOKE, 1.0F, 1.0F))
+         .build();
+     public final List<TickingBlockEntity> blockEntityTickers = Lists.newArrayList();
+-    protected final CollectingNeighborUpdater neighborUpdater;
++    protected final net.minecraft.world.level.redstone.NeighborUpdater neighborUpdater; // Leaves - instantBlockUpdaterReintroduced
+     private final List<TickingBlockEntity> pendingBlockEntityTickers = Lists.newArrayList();
+     private boolean tickingBlockEntities;
+     protected final Thread thread;
+@@ -869,7 +869,13 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+         this.thread = Thread.currentThread();
+         this.biomeManager = new BiomeManager(this, biomeZoomSeed);
+         this.isDebug = isDebug;
+-        this.neighborUpdater = new CollectingNeighborUpdater(this, maxChainedNeighborUpdates);
++        // Leaves start - instantBlockUpdaterReintroduced
++        if (org.leavesmc.leaves.LeavesConfig.modify.oldMC.updater.instantBlockUpdaterReintroduced) {
++            this.neighborUpdater = new net.minecraft.world.level.redstone.InstantNeighborUpdater(this);
++        } else {
++            this.neighborUpdater = new CollectingNeighborUpdater(this, maxChainedNeighborUpdates);
++        }
++        // Leaves end - instantBlockUpdaterReintroduced
+         this.registryAccess = registryAccess;
+         this.palettedContainerFactory = PalettedContainerFactory.create(registryAccess);
+         this.damageSources = new DamageSources(registryAccess);

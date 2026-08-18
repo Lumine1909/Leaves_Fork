@@ -1,0 +1,40 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: violetc <58360096+s-yh-china@users.noreply.github.com>
+Date: Thu, 15 May 2025 12:17:30 +0800
+Subject: [PATCH] Vanilla portal handle
+
+
+diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
+index 49c77363b29b1cae9eea64195c3d308bd8184ea9..4ecdcd605877f43a46452275fff7830efde7efa7 100644
+--- a/net/minecraft/world/entity/Entity.java
++++ b/net/minecraft/world/entity/Entity.java
+@@ -869,6 +869,7 @@ public abstract class Entity
+ 
+     // CraftBukkit start
+     public void postTick() {
++        if (org.leavesmc.leaves.LeavesConfig.fix.vanillaPortalHandle) return; // Leaves - vanilla
+         // No clean way to break out of ticking once the entity has been copied to a new world, so instead we move the portalling later in the tick cycle
+         if (!(this instanceof ServerPlayer) && this.isAlive()) { // Paper - don't attempt to teleport dead entities
+             this.handlePortal();
+@@ -890,7 +891,7 @@ public abstract class Entity
+             this.boardingCooldown--;
+         }
+ 
+-        if (this instanceof ServerPlayer) this.handlePortal(); // CraftBukkit - Moved up to postTick
++        if (org.leavesmc.leaves.LeavesConfig.fix.vanillaPortalHandle || this instanceof ServerPlayer) this.handlePortal(); // CraftBukkit - Moved up to postTick // Leaves - vanilla
+         if (this.canSpawnSprintParticle()) {
+             this.spawnSprintParticle();
+         }
+diff --git a/net/minecraft/world/entity/vehicle/minecart/AbstractMinecart.java b/net/minecraft/world/entity/vehicle/minecart/AbstractMinecart.java
+index 5ad77636d0681d1f0341cff4482ba6ad52f3583b..afa6fc793c2a30df93b8cbeb894385ac9973c805 100644
+--- a/net/minecraft/world/entity/vehicle/minecart/AbstractMinecart.java
++++ b/net/minecraft/world/entity/vehicle/minecart/AbstractMinecart.java
+@@ -307,7 +307,7 @@ public abstract class AbstractMinecart extends VehicleEntity {
+ 
+         this.checkBelowWorld();
+         this.computeSpeed();
+-        // this.handlePortal(); // CraftBukkit - handled in postTick
++        if (org.leavesmc.leaves.LeavesConfig.fix.vanillaPortalHandle) this.handlePortal(); // CraftBukkit - handled in postTick // Leaves - vanilla
+         this.behavior.tick();
+         // CraftBukkit start
+         org.bukkit.World bworld = this.level().getWorld();

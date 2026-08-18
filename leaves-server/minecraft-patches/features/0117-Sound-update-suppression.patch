@@ -1,0 +1,119 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: MC_XiaoHei <xiaohei.xor7@outlook.com>
+Date: Tue, 20 May 2025 12:08:40 +0000
+Subject: [PATCH] Sound update suppression
+
+
+diff --git a/net/minecraft/world/entity/animal/equine/AbstractHorse.java b/net/minecraft/world/entity/animal/equine/AbstractHorse.java
+index 847fcecc4046d9fe880aaa7eb2a3c55c5bc61faf..8cbcf630c4ca61e45737b02780d36d80e6187df5 100644
+--- a/net/minecraft/world/entity/animal/equine/AbstractHorse.java
++++ b/net/minecraft/world/entity/animal/equine/AbstractHorse.java
+@@ -300,7 +300,17 @@ public abstract class AbstractHorse extends Animal implements PlayerRideableJump
+ 
+     public void createInventory() {
+         SimpleContainer old = this.inventory;
+-        this.inventory = new SimpleContainer(this.getInventorySize(), (org.bukkit.entity.AbstractHorse) this.getBukkitEntity()); // CraftBukkit
++        // Leaves start - pca
++        this.inventory = new SimpleContainer(this.getInventorySize(), (org.bukkit.entity.AbstractHorse) this.getBukkitEntity()) { // CraftBukkit
++            @Override
++            public void setChanged() {
++                super.setChanged();
++                if (org.leavesmc.leaves.LeavesConfig.protocol.pca.enable) {
++                    org.leavesmc.leaves.protocol.PcaSyncProtocol.syncEntityToClient(AbstractHorse.this);
++                }
++            }
++        };
++        // Leaves end - pca
+         if (old != null) {
+             int max = Math.min(old.getContainerSize(), this.inventory.getContainerSize());
+ 
+diff --git a/net/minecraft/world/entity/npc/villager/AbstractVillager.java b/net/minecraft/world/entity/npc/villager/AbstractVillager.java
+index 36844b51b6db38a91dfda5b192e249983328a279..43e7dbf354fbbcdec1b2f3a5e24b8b199ad67dba 100644
+--- a/net/minecraft/world/entity/npc/villager/AbstractVillager.java
++++ b/net/minecraft/world/entity/npc/villager/AbstractVillager.java
+@@ -57,7 +57,17 @@ public abstract class AbstractVillager extends AgeableMob implements Npc, Mercha
+     private static final EntityDataAccessor<Integer> DATA_UNHAPPY_COUNTER = SynchedEntityData.defineId(AbstractVillager.class, EntityDataSerializers.INT);
+     private @Nullable Player tradingPlayer;
+     protected @Nullable MerchantOffers offers;
+-    private final SimpleContainer inventory = new SimpleContainer(8, (org.bukkit.craftbukkit.entity.CraftAbstractVillager) this.getBukkitEntity()); // CraftBukkit - add argument
++    // Leaves start - pca
++    private final SimpleContainer inventory = new SimpleContainer(8, (org.bukkit.craftbukkit.entity.CraftAbstractVillager) this.getBukkitEntity()) { // CraftBukkit - add argument
++        @Override
++        public void setChanged() {
++            super.setChanged();
++            if (!AbstractVillager.this.level().isClientSide() && org.leavesmc.leaves.LeavesConfig.protocol.pca.enable) {
++                org.leavesmc.leaves.protocol.PcaSyncProtocol.syncEntityToClient(AbstractVillager.this);
++            }
++        }
++    };
++    // Leaves end - pca
+     protected boolean voidTrade = false; // Leaves - force void trade
+ 
+     public AbstractVillager(final EntityType<? extends AbstractVillager> type, final Level level) {
+diff --git a/net/minecraft/world/entity/vehicle/minecart/AbstractMinecartContainer.java b/net/minecraft/world/entity/vehicle/minecart/AbstractMinecartContainer.java
+index 91d699adfbfa211db85734a6406d690aed5f0324..918b20be69b9961b3d9c0f1d4f8d0866e33a2745 100644
+--- a/net/minecraft/world/entity/vehicle/minecart/AbstractMinecartContainer.java
++++ b/net/minecraft/world/entity/vehicle/minecart/AbstractMinecartContainer.java
+@@ -66,6 +66,11 @@ public abstract class AbstractMinecartContainer extends AbstractMinecart impleme
+ 
+     @Override
+     public void setChanged() {
++        // Leaves start - pca
++        if (org.leavesmc.leaves.LeavesConfig.protocol.pca.enable) {
++            org.leavesmc.leaves.protocol.PcaSyncProtocol.syncEntityToClient(this);
++        }
++        // Leaves end - pca
+     }
+ 
+     @Override
+diff --git a/net/minecraft/world/level/block/SculkSensorBlock.java b/net/minecraft/world/level/block/SculkSensorBlock.java
+index 3da6b26423c0810827159d2df64640817c8e8cd4..d78e8bafbb10f1b5224c39e66fd916188ef59e64 100644
+--- a/net/minecraft/world/level/block/SculkSensorBlock.java
++++ b/net/minecraft/world/level/block/SculkSensorBlock.java
+@@ -98,7 +98,7 @@ public class SculkSensorBlock extends BaseEntityBlock implements SimpleWaterlogg
+     @Override
+     public void stepOn(final Level level, final BlockPos pos, final BlockState onState, final Entity entity) {
+         if (!level.isClientSide()
+-            && canActivate(onState)
++            && canActivate(onState, pos) // Leaves - Sound update suppression
+             && !entity.is(EntityTypes.WARDEN)
+             && level.getBlockEntity(pos) instanceof SculkSensorBlockEntity sculkSensor
+             && level instanceof ServerLevel serverLevel
+@@ -213,6 +213,15 @@ public class SculkSensorBlock extends BaseEntityBlock implements SimpleWaterlogg
+         return state.getValue(PHASE);
+     }
+ 
++    // Leaves start - Sound update suppression
++    public static boolean canActivate(BlockState state, BlockPos pos) {
++        if (org.leavesmc.leaves.LeavesConfig.modify.oldMC.updater.soundUpdateSuppression && !(state.getBlock() instanceof SculkSensorBlock)) {
++            throw new org.leavesmc.leaves.util.UpdateSuppressionException(pos, null, state.getBlock(), null, new IllegalArgumentException());
++        }
++        return canActivate(state);
++    }
++    // Leaves end - Sound update suppression
++
+     public static boolean canActivate(final BlockState state) {
+         return state.getBlock() instanceof SculkSensorBlock && getPhase(state) == SculkSensorPhase.INACTIVE; // Paper - Check for a valid type
+     }
+diff --git a/net/minecraft/world/level/block/entity/SculkSensorBlockEntity.java b/net/minecraft/world/level/block/entity/SculkSensorBlockEntity.java
+index bb1f858ef442357cb51fbe3e7229c9f95db183a5..e2f50d7069b3c1dcb0e3780448118496b2308379 100644
+--- a/net/minecraft/world/level/block/entity/SculkSensorBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/SculkSensorBlockEntity.java
+@@ -115,7 +115,7 @@ public class SculkSensorBlockEntity extends BlockEntity implements GameEventList
+         ) {
+             return (!pos.equals(this.blockPos) || !event.is(GameEvent.BLOCK_DESTROY) && !event.is(GameEvent.BLOCK_PLACE))
+                 && VibrationSystem.getGameEventFrequency(event) != 0
+-                && SculkSensorBlock.canActivate(SculkSensorBlockEntity.this.getBlockState());
++                && SculkSensorBlock.canActivate(SculkSensorBlockEntity.this.getBlockState(), pos); // Leaves - Sound update suppression
+         }
+ 
+         @Override
+@@ -128,7 +128,7 @@ public class SculkSensorBlockEntity extends BlockEntity implements GameEventList
+             final float receivingDistance
+         ) {
+             BlockState state = SculkSensorBlockEntity.this.getBlockState();
+-            if (SculkSensorBlock.canActivate(state)) {
++            if (SculkSensorBlock.canActivate(state, pos)) { // Leaves - Sound update suppression
+                 int eventFrequency = VibrationSystem.getGameEventFrequency(event);
+                 SculkSensorBlockEntity.this.setLastVibrationFrequency(eventFrequency);
+                 int calculatedPower = VibrationSystem.getRedstoneStrengthForDistance(receivingDistance, this.getListenerRadius());

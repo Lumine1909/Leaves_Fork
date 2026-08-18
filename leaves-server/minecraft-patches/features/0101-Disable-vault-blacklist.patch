@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: huanli233 <392352840@qq.com>
+Date: Sun, 27 Oct 2024 15:57:37 +0800
+Subject: [PATCH] Disable vault blacklist
+
+
+diff --git a/net/minecraft/world/level/block/entity/vault/VaultServerData.java b/net/minecraft/world/level/block/entity/vault/VaultServerData.java
+index fe482c2f1c56e6575318ea796c67c4cedaa9638d..21432f065145e7f4267f564147cf412812fde3f5 100644
+--- a/net/minecraft/world/level/block/entity/vault/VaultServerData.java
++++ b/net/minecraft/world/level/block/entity/vault/VaultServerData.java
+@@ -59,7 +59,7 @@ public class VaultServerData {
+     }
+ 
+     boolean hasRewardedPlayer(final Player player) {
+-        return this.rewardedPlayers.contains(player.getUUID());
++        return !org.leavesmc.leaves.LeavesConfig.modify.disableVaultBlacklist && this.rewardedPlayers.contains(player.getUUID()); // Leaves - disable vault blacklist
+     }
+ 
+     @VisibleForTesting
+@@ -68,6 +68,7 @@ public class VaultServerData {
+         addToRewardedPlayers(player.getUUID());
+     }
+     public boolean addToRewardedPlayers(final java.util.UUID player) {
++        if (org.leavesmc.leaves.LeavesConfig.modify.disableVaultBlacklist) return false; // Leaves - disable vault blacklist
+         final boolean removed = this.rewardedPlayers.add(player);
+     // Paper end - Vault API
+         if (this.rewardedPlayers.size() > 128) {
+diff --git a/net/minecraft/world/level/block/entity/vault/VaultSharedData.java b/net/minecraft/world/level/block/entity/vault/VaultSharedData.java
+index 41154db05edbb777fbe08e1e79b4f30f12a3cc80..302bf0be76f44f0aea8ec43cb806f38cc04e6704 100644
+--- a/net/minecraft/world/level/block/entity/vault/VaultSharedData.java
++++ b/net/minecraft/world/level/block/entity/vault/VaultSharedData.java
+@@ -70,8 +70,8 @@ public class VaultSharedData {
+         Set<UUID> currentConnectedPlayers = config.playerDetector()
+             .detect(serverLevel, config.entitySelector(), pos, limit, false)
+             .stream()
+-            .filter(uuid -> !serverData.getRewardedPlayers().contains(uuid))
+-            .collect(Collectors.toSet());
++            .filter(uuid -> org.leavesmc.leaves.LeavesConfig.modify.disableVaultBlacklist || !serverData.getRewardedPlayers().contains(uuid))
++            .collect(Collectors.toSet()); // Leaves - disable vault blacklist
+         if (!this.connectedPlayers.equals(currentConnectedPlayers)) {
+             this.connectedPlayers = currentConnectedPlayers;
+             this.markDirty();

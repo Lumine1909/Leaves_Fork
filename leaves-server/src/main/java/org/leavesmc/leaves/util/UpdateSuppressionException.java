@@ -98,7 +98,7 @@ public class UpdateSuppressionException extends RuntimeException {
             messages.add("at [x:%d,y:%d,z:%d]".formatted(pos.getX(), pos.getY(), pos.getZ()));
         }
         if (level != null) {
-            messages.add("in %s".formatted(level.dimension().location()));
+            messages.add("in %s".formatted(level.dimension().identifier()));
         }
         if (player != null) {
             if (player instanceof ServerBot) {
@@ -121,5 +121,15 @@ public class UpdateSuppressionException extends RuntimeException {
             return "IAE";
         }
         return type.getSimpleName();
+    }
+
+    @Override
+    public Throwable fillInStackTrace() {
+        return this;
+    }
+
+    @Override
+    public StackTraceElement[] getStackTrace() {
+        return this.throwable.getStackTrace(); // delegate to throwable as we don't have a stacktrace
     }
 }

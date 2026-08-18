@@ -5,20 +5,20 @@ Subject: [PATCH] Stick can change ArmorStand arm status
 
 
 diff --git a/net/minecraft/world/entity/decoration/ArmorStand.java b/net/minecraft/world/entity/decoration/ArmorStand.java
-index 15479a9fc47cca3d6627b42c31ba8ff114bbe362..9420ca7e32ae71ce9cecf8afd808ae6e9f8f4258 100644
+index 9e4293c6df1851a852423b469577388d2254e169..c9921927ec5f606e7b9537086249e1bfd3efb4ec 100644
 --- a/net/minecraft/world/entity/decoration/ArmorStand.java
 +++ b/net/minecraft/world/entity/decoration/ArmorStand.java
-@@ -229,6 +229,13 @@ public class ArmorStand extends LivingEntity {
-                     return InteractionResult.SUCCESS_SERVER;
-                 }
-             } else {
+@@ -237,6 +237,13 @@ public class ArmorStand extends LivingEntity {
+                 return InteractionResult.SUCCESS_SERVER;
+             }
+         } else {
 +                // Leaves start - stick can change ArmorStand arm status
-+                if (org.leavesmc.leaves.LeavesConfig.modify.stickChangeArmorStandArmStatus && itemInHand.is(Items.STICK) && player.isShiftKeyDown()) {
++                if (org.leavesmc.leaves.LeavesConfig.modify.stickChangeArmorStandArmStatus && itemStack.is(Items.STICK) && player.isShiftKeyDown()) {
 +                    setShowArms(!showArms());
 +                    return InteractionResult.FAIL;
 +                }
 +                // Leaves end - stick can change ArmorStand arm status
 +
-                 if (this.isDisabled(equipmentSlotForItem)) {
-                     return InteractionResult.FAIL;
-                 }
+             if (this.isDisabled(itemInHandSlot)) {
+                 return InteractionResult.FAIL;
+             }

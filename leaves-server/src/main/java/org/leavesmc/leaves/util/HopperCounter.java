@@ -11,10 +11,11 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.context.ContextMap;
 import net.minecraft.world.item.BlockItem;
@@ -149,19 +150,19 @@ public class HopperCounter {
     }
 
     private static final Map<Item, Block> DEFAULTS = Map.<Item, Block>ofEntries(
-        entry(Items.DANDELION, Blocks.YELLOW_WOOL),
-        entry(Items.POPPY, Blocks.RED_WOOL),
-        entry(Items.BLUE_ORCHID, Blocks.LIGHT_BLUE_WOOL),
-        entry(Items.ALLIUM, Blocks.MAGENTA_WOOL),
+        entry(Items.DANDELION, Blocks.WOOL.pick(DyeColor.YELLOW)),
+        entry(Items.POPPY, Blocks.WOOL.pick(DyeColor.RED)),
+        entry(Items.BLUE_ORCHID, Blocks.WOOL.pick(DyeColor.LIGHT_BLUE)),
+        entry(Items.ALLIUM, Blocks.WOOL.pick(DyeColor.MAGENTA)),
         entry(Items.AZURE_BLUET, Blocks.SNOW_BLOCK),
-        entry(Items.RED_TULIP, Blocks.RED_WOOL),
-        entry(Items.ORANGE_TULIP, Blocks.ORANGE_WOOL),
+        entry(Items.RED_TULIP, Blocks.WOOL.pick(DyeColor.RED)),
+        entry(Items.ORANGE_TULIP, Blocks.WOOL.pick(DyeColor.ORANGE)),
         entry(Items.WHITE_TULIP, Blocks.SNOW_BLOCK),
-        entry(Items.PINK_TULIP, Blocks.PINK_WOOL),
+        entry(Items.PINK_TULIP, Blocks.WOOL.pick(DyeColor.PINK)),
         entry(Items.OXEYE_DAISY, Blocks.SNOW_BLOCK),
-        entry(Items.CORNFLOWER, Blocks.BLUE_WOOL),
-        entry(Items.WITHER_ROSE, Blocks.BLACK_WOOL),
-        entry(Items.LILY_OF_THE_VALLEY, Blocks.WHITE_WOOL),
+        entry(Items.CORNFLOWER, Blocks.WOOL.pick(DyeColor.BLUE)),
+        entry(Items.WITHER_ROSE, Blocks.WOOL.pick(DyeColor.BLACK)),
+        entry(Items.LILY_OF_THE_VALLEY, Blocks.WOOL.pick(DyeColor.WHITE)),
         entry(Items.BROWN_MUSHROOM, Blocks.BROWN_MUSHROOM_BLOCK),
         entry(Items.RED_MUSHROOM, Blocks.RED_MUSHROOM_BLOCK),
         entry(Items.STICK, Blocks.OAK_PLANKS),
@@ -169,51 +170,51 @@ public class HopperCounter {
         entry(Items.IRON_INGOT, Blocks.IRON_BLOCK),
         entry(Items.DIAMOND, Blocks.DIAMOND_BLOCK),
         entry(Items.NETHERITE_INGOT, Blocks.NETHERITE_BLOCK),
-        entry(Items.SUNFLOWER, Blocks.YELLOW_WOOL),
-        entry(Items.LILAC, Blocks.MAGENTA_WOOL),
-        entry(Items.ROSE_BUSH, Blocks.RED_WOOL),
-        entry(Items.PEONY, Blocks.PINK_WOOL),
-        entry(Items.CARROT, Blocks.ORANGE_WOOL),
-        entry(Items.APPLE, Blocks.RED_WOOL),
+        entry(Items.SUNFLOWER, Blocks.WOOL.pick(DyeColor.YELLOW)),
+        entry(Items.LILAC, Blocks.WOOL.pick(DyeColor.MAGENTA)),
+        entry(Items.ROSE_BUSH, Blocks.WOOL.pick(DyeColor.RED)),
+        entry(Items.PEONY, Blocks.WOOL.pick(DyeColor.PINK)),
+        entry(Items.CARROT, Blocks.WOOL.pick(DyeColor.ORANGE)),
+        entry(Items.APPLE, Blocks.WOOL.pick(DyeColor.RED)),
         entry(Items.WHEAT, Blocks.HAY_BLOCK),
-        entry(Items.PORKCHOP, Blocks.PINK_WOOL),
-        entry(Items.RABBIT, Blocks.PINK_WOOL),
-        entry(Items.CHICKEN, Blocks.WHITE_TERRACOTTA),
+        entry(Items.PORKCHOP, Blocks.WOOL.pick(DyeColor.PINK)),
+        entry(Items.RABBIT, Blocks.WOOL.pick(DyeColor.PINK)),
+        entry(Items.CHICKEN, Blocks.DYED_TERRACOTTA.pick(DyeColor.WHITE)),
         entry(Items.BEEF, Blocks.NETHERRACK),
         entry(Items.ENCHANTED_GOLDEN_APPLE, Blocks.GOLD_BLOCK),
-        entry(Items.COD, Blocks.WHITE_TERRACOTTA),
+        entry(Items.COD, Blocks.DYED_TERRACOTTA.pick(DyeColor.WHITE)),
         entry(Items.SALMON, Blocks.ACACIA_PLANKS),
-        entry(Items.ROTTEN_FLESH, Blocks.BROWN_WOOL),
-        entry(Items.PUFFERFISH, Blocks.YELLOW_TERRACOTTA),
-        entry(Items.TROPICAL_FISH, Blocks.ORANGE_WOOL),
-        entry(Items.POTATO, Blocks.WHITE_TERRACOTTA),
-        entry(Items.MUTTON, Blocks.RED_WOOL),
+        entry(Items.ROTTEN_FLESH, Blocks.WOOL.pick(DyeColor.BROWN)),
+        entry(Items.PUFFERFISH, Blocks.DYED_TERRACOTTA.pick(DyeColor.YELLOW)),
+        entry(Items.TROPICAL_FISH, Blocks.WOOL.pick(DyeColor.ORANGE)),
+        entry(Items.POTATO, Blocks.DYED_TERRACOTTA.pick(DyeColor.WHITE)),
+        entry(Items.MUTTON, Blocks.WOOL.pick(DyeColor.RED)),
         entry(Items.BEETROOT, Blocks.NETHERRACK),
         entry(Items.MELON_SLICE, Blocks.MELON),
         entry(Items.POISONOUS_POTATO, Blocks.SLIME_BLOCK),
         entry(Items.SPIDER_EYE, Blocks.NETHERRACK),
-        entry(Items.GUNPOWDER, Blocks.GRAY_WOOL),
-        entry(Items.TURTLE_SCUTE, Blocks.LIME_WOOL),
+        entry(Items.GUNPOWDER, Blocks.WOOL.pick(DyeColor.GRAY)),
+        entry(Items.TURTLE_SCUTE, Blocks.WOOL.pick(DyeColor.LIME)),
         entry(Items.ARMADILLO_SCUTE, Blocks.ANCIENT_DEBRIS),
-        entry(Items.FEATHER, Blocks.WHITE_WOOL),
-        entry(Items.FLINT, Blocks.BLACK_WOOL),
+        entry(Items.FEATHER, Blocks.WOOL.pick(DyeColor.WHITE)),
+        entry(Items.FLINT, Blocks.WOOL.pick(DyeColor.BLACK)),
         entry(Items.LEATHER, Blocks.SPRUCE_PLANKS),
         entry(Items.GLOWSTONE_DUST, Blocks.GLOWSTONE),
-        entry(Items.PAPER, Blocks.WHITE_WOOL),
+        entry(Items.PAPER, Blocks.WOOL.pick(DyeColor.WHITE)),
         entry(Items.BRICK, Blocks.BRICKS),
-        entry(Items.INK_SAC, Blocks.BLACK_WOOL),
+        entry(Items.INK_SAC, Blocks.WOOL.pick(DyeColor.BLACK)),
         entry(Items.SNOWBALL, Blocks.SNOW_BLOCK),
         entry(Items.WATER_BUCKET, Blocks.WATER),
         entry(Items.LAVA_BUCKET, Blocks.LAVA),
-        entry(Items.MILK_BUCKET, Blocks.WHITE_WOOL),
+        entry(Items.MILK_BUCKET, Blocks.WOOL.pick(DyeColor.WHITE)),
         entry(Items.CLAY_BALL, Blocks.CLAY),
         entry(Items.COCOA_BEANS, Blocks.COCOA),
         entry(Items.BONE, Blocks.BONE_BLOCK),
-        entry(Items.COD_BUCKET, Blocks.BROWN_TERRACOTTA),
-        entry(Items.PUFFERFISH_BUCKET, Blocks.YELLOW_TERRACOTTA),
-        entry(Items.SALMON_BUCKET, Blocks.PINK_TERRACOTTA),
-        entry(Items.TROPICAL_FISH_BUCKET, Blocks.ORANGE_TERRACOTTA),
-        entry(Items.SUGAR, Blocks.WHITE_WOOL),
+        entry(Items.COD_BUCKET, Blocks.DYED_TERRACOTTA.pick(DyeColor.BROWN)),
+        entry(Items.PUFFERFISH_BUCKET, Blocks.DYED_TERRACOTTA.pick(DyeColor.YELLOW)),
+        entry(Items.SALMON_BUCKET, Blocks.DYED_TERRACOTTA.pick(DyeColor.PINK)),
+        entry(Items.TROPICAL_FISH_BUCKET, Blocks.DYED_TERRACOTTA.pick(DyeColor.ORANGE)),
+        entry(Items.SUGAR, Blocks.WOOL.pick(DyeColor.WHITE)),
         entry(Items.BLAZE_POWDER, Blocks.GOLD_BLOCK),
         entry(Items.ENDER_PEARL, Blocks.WARPED_PLANKS),
         entry(Items.NETHER_STAR, Blocks.DIAMOND_BLOCK),
@@ -226,12 +227,12 @@ public class HopperCounter {
         entry(Items.HEART_OF_THE_SEA, Blocks.CONDUIT),
         entry(Items.HONEYCOMB, Blocks.HONEYCOMB_BLOCK),
         entry(Items.NAME_TAG, Blocks.BONE_BLOCK),
-        entry(Items.TOTEM_OF_UNDYING, Blocks.YELLOW_TERRACOTTA),
+        entry(Items.TOTEM_OF_UNDYING, Blocks.DYED_TERRACOTTA.pick(DyeColor.YELLOW)),
         entry(Items.TRIDENT, Blocks.PRISMARINE),
-        entry(Items.GHAST_TEAR, Blocks.WHITE_WOOL),
+        entry(Items.GHAST_TEAR, Blocks.WOOL.pick(DyeColor.WHITE)),
         entry(Items.PHANTOM_MEMBRANE, Blocks.BONE_BLOCK),
         entry(Items.EGG, Blocks.BONE_BLOCK),
-        entry(Items.COPPER_INGOT, Blocks.COPPER_BLOCK),
+        entry(Items.COPPER_INGOT, Blocks.COPPER_BLOCK.weathering().unaffected()),
         entry(Items.AMETHYST_SHARD, Blocks.AMETHYST_BLOCK)
     );
 
@@ -244,7 +245,7 @@ public class HopperCounter {
             return direct;
         }
 
-        ResourceLocation id = registryAccess.lookupOrThrow(Registries.ITEM).getKey(item);
+        Identifier id = registryAccess.lookupOrThrow(Registries.ITEM).getKey(item);
         if (id == null) {
             return null;
         }
@@ -252,7 +253,7 @@ public class HopperCounter {
 
         for (Recipe<?> recipe : getRecipesForOutput(server.getRecipeManager(), id, server.overworld())) {
             for (Ingredient ingredient : recipe.placementInfo().ingredients()) {
-                Optional<Holder<Item>> match = ingredient.items().filter(stack -> fromItem(stack.value(), registryAccess) != null).findFirst();
+                Optional<Holder<@NotNull Item>> match = ingredient.items().filter(stack -> fromItem(stack.value(), registryAccess) != null).findFirst();
                 if (match.isPresent()) {
                     return fromItem(match.get().value(), registryAccess);
                 }
@@ -262,13 +263,13 @@ public class HopperCounter {
     }
 
     @NotNull
-    public static List<Recipe<?>> getRecipesForOutput(@NotNull RecipeManager recipeManager, ResourceLocation id, Level level) {
+    public static List<Recipe<?>> getRecipesForOutput(@NotNull RecipeManager recipeManager, Identifier id, Level level) {
         List<Recipe<?>> results = new ArrayList<>();
         ContextMap context = SlotDisplayContext.fromLevel(level);
         recipeManager.getRecipes().forEach(recipe -> {
             for (RecipeDisplay recipeDisplay : recipe.value().display()) {
                 recipeDisplay.result().resolveForStacks(context).forEach(stack -> {
-                    if (BuiltInRegistries.ITEM.wrapAsHolder(stack.getItem()).unwrapKey().map(ResourceKey::location).orElseThrow(IllegalStateException::new).equals(id)) {
+                    if (BuiltInRegistries.ITEM.wrapAsHolder(stack.getItem()).unwrapKey().map(ResourceKey::identifier).orElseThrow(IllegalStateException::new).equals(id)) {
                         results.add(recipe.value());
                     }
                 });
@@ -282,14 +283,17 @@ public class HopperCounter {
         if (DEFAULTS.containsKey(item)) {
             return TextColor.color(appropriateColor(DEFAULTS.get(item).defaultMapColor().col));
         }
-        if (item instanceof DyeItem dye) {
-            return TextColor.color(appropriateColor(dye.getDyeColor().getMapColor().col));
+        if (item instanceof DyeItem) {
+            DyeColor dyeColor = item.components().get(DataComponents.DYE);
+            if (dyeColor != null) {
+                return TextColor.color(appropriateColor(dyeColor.getMapColor().col));
+            }
         }
 
         Block block = null;
         final Registry<Item> itemRegistry = registryAccess.lookupOrThrow(Registries.ITEM);
         final Registry<Block> blockRegistry = registryAccess.lookupOrThrow(Registries.BLOCK);
-        ResourceLocation id = itemRegistry.getKey(item);
+        Identifier id = itemRegistry.getKey(item);
         if (item instanceof BlockItem blockItem) {
             block = blockItem.getBlock();
         } else if (blockRegistry.getOptional(id).isPresent()) {

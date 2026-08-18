@@ -1,0 +1,63 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: violetc <58360096+s-yh-china@users.noreply.github.com>
+Date: Thu, 16 Feb 2023 17:25:01 +0800
+Subject: [PATCH] Configurable vanilla random
+
+
+diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
+index 3f14a0765022d32d36183f44ae158c4a2dacea27..5ced62213de0f1d8caf0eeefc12071950bbe30a8 100644
+--- a/net/minecraft/world/entity/Entity.java
++++ b/net/minecraft/world/entity/Entity.java
+@@ -298,7 +298,7 @@ public abstract class Entity
+     public double yOld;
+     public double zOld;
+     public boolean noPhysics;
+-    protected final RandomSource random = SHARED_RANDOM; // Paper - Share random for entities to make them more random
++    public final RandomSource random = org.leavesmc.leaves.LeavesConfig.modify.useVanillaRandom ? RandomSource.create() : SHARED_RANDOM; // Paper - Share random for entities to make them more random // Leaves - configurable vanilla random
+     public int tickCount;
+     private int remainingFireTicks;
+     private final EntityFluidInteraction fluidInteraction = new EntityFluidInteraction(Set.of(FluidTags.WATER, FluidTags.LAVA));
+diff --git a/net/minecraft/world/entity/animal/squid/Squid.java b/net/minecraft/world/entity/animal/squid/Squid.java
+index cc6ecffa5eccdf8f12d37861ead767dbe5326397..56157dae105a445ffa49b7b70b075b853bcb25fe 100644
+--- a/net/minecraft/world/entity/animal/squid/Squid.java
++++ b/net/minecraft/world/entity/animal/squid/Squid.java
+@@ -52,6 +52,7 @@ public class Squid extends AgeableWaterCreature {
+ 
+     public Squid(final EntityType<? extends Squid> type, final Level level) {
+         super(type, level);
++        if (org.leavesmc.leaves.LeavesConfig.modify.useVanillaRandom) this.random.setSeed(this.getId()); // Paper - Share random for entities to make them more random // Leaves - configurable vanilla random
+         this.tentacleSpeed = 1.0F / (this.random.nextFloat() + 1.0F) * 0.2F;
+     }
+ 
+diff --git a/net/minecraft/world/entity/item/ItemEntity.java b/net/minecraft/world/entity/item/ItemEntity.java
+index 85dd5d7e09af964de1c0ad09799384d122f49bbe..bb2308339e614de8753b69a0961b35e4bbbc5d96 100644
+--- a/net/minecraft/world/entity/item/ItemEntity.java
++++ b/net/minecraft/world/entity/item/ItemEntity.java
+@@ -65,7 +65,13 @@ public class ItemEntity extends Entity implements TraceableEntity {
+         this(EntityTypes.ITEM, level);
+         this.setPos(x, y, z);
+         this.setItem(itemStack);
+-        this.setDeltaMovement(this.random.nextDouble() * 0.2 - 0.1, 0.2, this.random.nextDouble() * 0.2 - 0.1);
++        // Leaves start - configurable vanilla random
++        if (org.leavesmc.leaves.LeavesConfig.modify.useVanillaRandom) {
++            this.setDeltaMovement(level.getRandom().nextDouble() * 0.2 - 0.1, 0.2, level.getRandom().nextDouble() * 0.2 - 0.1);
++        } else {
++            this.setDeltaMovement(this.random.nextDouble() * 0.2 - 0.1, 0.2, this.random.nextDouble() * 0.2 - 0.1);
++        }
++        // Leaves end - configurable vanilla random
+     }
+ 
+     public ItemEntity(
+diff --git a/net/minecraft/world/entity/item/PrimedTnt.java b/net/minecraft/world/entity/item/PrimedTnt.java
+index ffb23ae34060c349e7200fc8475412295bd54c7e..6ae507eee760002bf52dc41375f0ed2047cc8d23 100644
+--- a/net/minecraft/world/entity/item/PrimedTnt.java
++++ b/net/minecraft/world/entity/item/PrimedTnt.java
+@@ -72,7 +72,7 @@ public class PrimedTnt extends Entity implements TraceableEntity {
+     public PrimedTnt(final Level level, final double x, final double y, final double z, final @Nullable LivingEntity owner) {
+         this(EntityTypes.TNT, level);
+         this.setPos(x, y, z);
+-        double rot = this.getRandom().nextDouble() * (float) (Math.PI * 2); // Paper - Don't use level random in entity constructors
++        double rot = (org.leavesmc.leaves.LeavesConfig.modify.useVanillaRandom ? level.getRandom().nextDouble() : this.getRandom().nextDouble()) * (float) (Math.PI * 2); // Paper - Don't use level random in entity constructors // Leaves - configurable vanilla random
+         this.setDeltaMovement(-Math.sin(rot) * 0.02, 0.2F, -Math.cos(rot) * 0.02);
+         this.setFuse(80);
+         this.xo = x;

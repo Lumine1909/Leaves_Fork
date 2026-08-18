@@ -5,84 +5,71 @@ Subject: [PATCH] Leaves Utils
 
 
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index 2e3e038874757049445a91bf590d5a1a427a3f6d..9b122a3dc18c6dbc84683ab54e5a503d0a5b7e4b 100644
+index 1530810cdb74810e37e3e22ce4fcda4ee7511055..d2a6d2e31868b5d3726826d50ecf5ff70ae10950 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
-@@ -373,6 +373,8 @@ public abstract class Entity implements SyncedDataHolder, DebugValueSource, Name
+@@ -387,6 +387,7 @@ public abstract class Entity
+     public long activatedTick = Integer.MIN_VALUE;
      public boolean isTemporarilyActive;
      public long activatedImmunityTick = Integer.MIN_VALUE;
- 
 +    private net.minecraft.nbt.CompoundTag leavesData = new net.minecraft.nbt.CompoundTag(); // Leaves - Leaves ex data
-+
+ 
      public void inactiveTick() {
      }
-     // Paper end - EAR 2
-@@ -2634,6 +2636,7 @@ public abstract class Entity implements SyncedDataHolder, DebugValueSource, Name
+@@ -2768,6 +2769,7 @@ public abstract class Entity
                  output.putBoolean("Paper.FreezeLock", true);
              }
              // Paper end
 +            output.store("Leaves.Data", net.minecraft.nbt.CompoundTag.CODEC, leavesData); // Leaves - leaves ex data
-         } catch (Throwable var7) {
-             CrashReport crashReport = CrashReport.forThrowable(var7, "Saving entity NBT");
-             CrashReportCategory crashReportCategory = crashReport.addCategory("Entity being saved");
-@@ -2754,6 +2757,7 @@ public abstract class Entity implements SyncedDataHolder, DebugValueSource, Name
+         } catch (Throwable t) {
+             CrashReport report = CrashReport.forThrowable(t, "Saving entity NBT");
+             CrashReportCategory category = report.addCategory("Entity being saved");
+@@ -2891,6 +2893,7 @@ public abstract class Entity
              }
              freezeLocked = input.getBooleanOr("Paper.FreezeLock", false);
              // Paper end
 +            leavesData = input.read("Leaves.Data", net.minecraft.nbt.CompoundTag.CODEC).orElse(new net.minecraft.nbt.CompoundTag());
-         } catch (Throwable var7) {
-             CrashReport crashReport = CrashReport.forThrowable(var7, "Loading entity NBT");
-             CrashReportCategory crashReportCategory = crashReport.addCategory("Entity being loaded");
-@@ -4512,7 +4516,7 @@ public abstract class Entity implements SyncedDataHolder, DebugValueSource, Name
-         return this.getType().is(EntityTypeTags.DEFLECTS_PROJECTILES) ? ProjectileDeflection.REVERSE : ProjectileDeflection.NONE;
+         } catch (Throwable t) {
+             CrashReport report = CrashReport.forThrowable(t, "Loading entity NBT");
+             CrashReportCategory category = report.addCategory("Entity being loaded");
+@@ -4656,7 +4659,7 @@ public abstract class Entity
+         return this.is(EntityTypeTags.DEFLECTS_PROJECTILES) ? ProjectileDeflection.REVERSE : ProjectileDeflection.NONE;
      }
  
--    @Nullable
-+    @org.jetbrains.annotations.NotNull // Leaves - notnull
-     public net.minecraft.world.entity.LivingEntity getControllingPassenger() {
+-    public @Nullable LivingEntity getControllingPassenger() {
++    public @org.jetbrains.annotations.NotNull LivingEntity getControllingPassenger() { // Leaves - notnull
          return null;
      }
-@@ -5402,4 +5406,9 @@ public abstract class Entity implements SyncedDataHolder, DebugValueSource, Name
+ 
+@@ -5456,4 +5459,10 @@ public abstract class Entity
          return ((ServerLevel) this.level()).isPositionEntityTicking(this.blockPosition());
      }
-     // Paper end - Expose entity id counter
+     // Paper end
++
 +    // Leaves start - leaves ex data
 +    public net.minecraft.nbt.CompoundTag getLeavesData() {
 +        return leavesData;
 +    }
 +    // Leaves end - leaves ex data
  }
-diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
-index d225267b1b07854b76c88ce461d7817a86d023a0..01e0dc28ef63456a45b800e72d76180b40811a72 100644
---- a/net/minecraft/world/level/Level.java
-+++ b/net/minecraft/world/level/Level.java
-@@ -916,7 +916,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
-         return this.isClientSide;
-     }
- 
--    @Nullable
-+    @org.jetbrains.annotations.NotNull // Leaves - notnull
-     @Override
-     public MinecraftServer getServer() {
-         return null;
 diff --git a/net/minecraft/world/level/LevelAccessor.java b/net/minecraft/world/level/LevelAccessor.java
-index e4a9e59661f5b51caf5b4fb12b0c90b14c1f9647..f5e9e395f04d5335d5d9a220f94962a72e38577d 100644
+index 700b9e7f141c4a2689690224c86376c9b957540e..b7c52129df2ee880ac1f61e282184443953a3ae2 100644
 --- a/net/minecraft/world/level/LevelAccessor.java
 +++ b/net/minecraft/world/level/LevelAccessor.java
-@@ -46,7 +46,7 @@ public interface LevelAccessor extends CommonLevelAccessor, LevelTimeAccess, Sch
+@@ -42,7 +42,7 @@ public interface LevelAccessor extends CommonLevelAccessor, ScheduledTickAccess
+         return this.getLevelData().getGameTime();
+     }
  
-     DifficultyInstance getCurrentDifficultyAt(BlockPos pos);
- 
--    @Nullable
-+    @org.jetbrains.annotations.NotNull // Leaves - notnull
-     MinecraftServer getServer();
+-    @Nullable MinecraftServer getServer();
++    @org.jetbrains.annotations.NotNull MinecraftServer getServer(); // Leaves - notnull
  
      default Difficulty getDifficulty() {
+         return this.getLevelData().getDifficulty();
 diff --git a/net/minecraft/world/level/block/Block.java b/net/minecraft/world/level/block/Block.java
-index 572fcb33b14d16334e2ab92ddf8699f1ba975aff..c431d0c45e71e0c8b880784181c92967e40779bd 100644
+index 29f5182c8528bfdced6a3c2c145e58721e723777..debf613713016443060ed85440ac0f80b1d0ad21 100644
 --- a/net/minecraft/world/level/block/Block.java
 +++ b/net/minecraft/world/level/block/Block.java
-@@ -649,6 +649,13 @@ public class Block extends BlockBehaviour implements ItemLike {
+@@ -696,6 +696,13 @@ public class Block extends BlockBehaviour implements ItemLike {
      }
      // CraftBukkit end
  
@@ -93,19 +80,19 @@ index 572fcb33b14d16334e2ab92ddf8699f1ba975aff..c431d0c45e71e0c8b880784181c92967
 +    }
 +    // Leaves end - reset push reaction
 +
-     record ShapePairKey(VoxelShape first, VoxelShape second) {
+     private record ShapePairKey(VoxelShape first, VoxelShape second) {
          @Override
-         public boolean equals(Object other) {
+         public boolean equals(final Object o) {
 diff --git a/net/minecraft/world/level/block/state/BlockBehaviour.java b/net/minecraft/world/level/block/state/BlockBehaviour.java
-index d31da50baeb7f47f0e1d81ee3c05023370df8cd3..a38618c28819405f0fb35aa686d1f3f0e94e5da2 100644
+index c78d77089e34c4bb559f173b449bfb7d91b05d5c..4d9416c06555a3080dd629201d48bb5dbacb4ea4 100644
 --- a/net/minecraft/world/level/block/state/BlockBehaviour.java
 +++ b/net/minecraft/world/level/block/state/BlockBehaviour.java
-@@ -766,7 +766,7 @@ public abstract class BlockBehaviour implements FeatureElement {
+@@ -792,7 +792,7 @@ public abstract class BlockBehaviour implements FeatureElement {
          }
  
          public PushReaction getPistonPushReaction() {
 -            return !this.isDestroyable() ? PushReaction.BLOCK : this.pushReaction; // Paper - Protect Bedrock and End Portal/Frames from being destroyed
-+            return !this.isDestroyable() ? PushReaction.BLOCK : this.getBlock().getResetPushReaction() == null ? this.pushReaction : this.getBlock().getResetPushReaction(); // Paper - Protect Bedrock and End Portal/Frames from being destroyed // Leaves - reset push reaction
++            return !this.isDestroyable() ? PushReaction.BLOCK : this.getBlock().getResetPushReaction() == null ? this.pushReaction : this.getBlock().getResetPushReaction(); // Paper - Protect Bedrock // Leaves - reset push reaction
          }
  
          public boolean isSolidRender() {

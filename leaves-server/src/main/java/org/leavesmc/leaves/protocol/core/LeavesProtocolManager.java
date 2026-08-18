@@ -4,7 +4,7 @@ import io.netty.buffer.ByteBuf;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import org.leavesmc.leaves.LeavesLogger;
 import org.leavesmc.leaves.protocol.core.invoker.BytebufReceiverInvokerHolder;
@@ -13,6 +13,7 @@ import org.leavesmc.leaves.protocol.core.invoker.InitInvokerHolder;
 import org.leavesmc.leaves.protocol.core.invoker.MinecraftRegisterInvokerHolder;
 import org.leavesmc.leaves.protocol.core.invoker.PayloadReceiverInvokerHolder;
 import org.leavesmc.leaves.protocol.core.invoker.PlayerInvokerHolder;
+import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -37,12 +38,12 @@ import java.util.jar.JarFile;
 
 public class LeavesProtocolManager {
 
-    private static final LeavesLogger LOGGER = LeavesLogger.LOGGER;
+    private static final Logger LOGGER = LeavesLogger.LOGGER;
 
     private static final Map<Class<? extends LeavesCustomPayload>, PayloadReceiverInvokerHolder> PAYLOAD_RECEIVERS = new HashMap<>();
-    private static final Map<Class<? extends LeavesCustomPayload>, ResourceLocation> IDS = new HashMap<>();
+    private static final Map<Class<? extends LeavesCustomPayload>, Identifier> IDS = new HashMap<>();
     private static final Map<Class<? extends LeavesCustomPayload>, StreamCodec<? super RegistryFriendlyByteBuf, LeavesCustomPayload>> CODECS = new HashMap<>();
-    private static final Map<ResourceLocation, StreamCodec<? super RegistryFriendlyByteBuf, LeavesCustomPayload>> ID2CODEC = new HashMap<>();
+    private static final Map<Identifier, StreamCodec<? super RegistryFriendlyByteBuf, LeavesCustomPayload>> ID2CODEC = new HashMap<>();
 
     private static final Map<String, BytebufReceiverInvokerHolder> STRICT_BYTEBUF_RECEIVERS = new HashMap<>();
     private static final Map<String, BytebufReceiverInvokerHolder> NAMESPACED_BYTEBUF_RECEIVERS = new HashMap<>();
@@ -70,8 +71,8 @@ public class LeavesProtocolManager {
                     }
                     try {
                         final LeavesCustomPayload.ID id = field.getAnnotation(LeavesCustomPayload.ID.class);
-                        if (id != null && field.getType().equals(ResourceLocation.class)) {
-                            IDS.put((Class<? extends LeavesCustomPayload>) clazz, (ResourceLocation) field.get(null));
+                        if (id != null && field.getType().equals(Identifier.class)) {
+                            IDS.put((Class<? extends LeavesCustomPayload>) clazz, (Identifier) field.get(null));
                         }
                         final LeavesCustomPayload.Codec codec = field.getAnnotation(LeavesCustomPayload.Codec.class);
                         if (codec != null && field.getType().equals(StreamCodec.class)) {
@@ -94,7 +95,7 @@ public class LeavesProtocolManager {
                 constructor.setAccessible(true);
                 protocol = (LeavesProtocol) constructor.newInstance();
             } catch (Throwable throwable) {
-                LOGGER.severe("Failed to load class " + clazz.getName() + ". " + throwable);
+                LOGGER.error("Failed to load class {}. {}", clazz.getName(), throwable);
                 return;
             }
 
@@ -110,7 +111,7 @@ public class LeavesProtocolManager {
                     try {
                         holder.invoke();
                     } catch (RuntimeException exception) {
-                        LOGGER.severe("Failed to invoke init method " + method.getName() + " in " + clazz.getName() + ", " + exception.getCause() + ": " + exception.getMessage());
+                        LOGGER.error("Failed to invoke init method {} in {}, {}: {}", method.getName(), clazz.getName(), exception.getCause(), exception.getMessage());
                     }
                     continue;
                 }
@@ -200,7 +201,7 @@ public class LeavesProtocolManager {
         }
     }
 
-    public static LeavesCustomPayload decode(ResourceLocation location, FriendlyByteBuf buf) {
+    public static LeavesCustomPayload decode(Identifier location, FriendlyByteBuf buf) {
         var codec = ID2CODEC.get(location);
         if (codec == null) {
             return null;
@@ -208,7 +209,7 @@ public class LeavesProtocolManager {
         try {
             return codec.decode(ProtocolUtils.decorate(buf));
         } catch (Exception e) {
-            LOGGER.severe("Failed to decode payload " + location, e);
+            LOGGER.error("Failed to decode payload {}", location, e);
             throw e;
         }
     }
@@ -220,10 +221,10 @@ public class LeavesProtocolManager {
             throw new IllegalArgumentException("Payload " + payload.getClass() + " is not configured correctly " + location + " " + codec);
         }
         try {
-            buf.writeResourceLocation(location);
+            buf.writeIdentifier(location);
             codec.encode(ProtocolUtils.decorate(buf), payload);
         } catch (Exception e) {
-            LOGGER.severe("Failed to encode payload " + location, e);
+            LOGGER.error("Failed to encode payload {}", location, e);
             throw e;
         }
     }
@@ -235,7 +236,7 @@ public class LeavesProtocolManager {
         }
     }
 
-    public static boolean handleBytebuf(IdentifierSelector selector, ResourceLocation location, ByteBuf buf) {
+    public static boolean handleBytebuf(IdentifierSelector selector, Identifier location, ByteBuf buf) {
         RegistryFriendlyByteBuf buf1 = ProtocolUtils.decorate(buf);
         BytebufReceiverInvokerHolder holder;
         if ((holder = STRICT_BYTEBUF_RECEIVERS.get(location.toString())) != null) {
@@ -289,7 +290,7 @@ public class LeavesProtocolManager {
     }
 
     public static void handleMinecraftRegister(String channelId, IdentifierSelector selector) {
-        ResourceLocation location = ResourceLocation.tryParse(channelId);
+        Identifier location = Identifier.tryParse(channelId);
         if (location == null) {
             return;
         }
@@ -319,7 +320,7 @@ public class LeavesProtocolManager {
                 set.add(key);
             }
         });
-        ProtocolUtils.sendBytebufPacket(player, ResourceLocation.fromNamespaceAndPath("minecraft", "register"), buf -> {
+        ProtocolUtils.sendBytebufPacket(player, Identifier.fromNamespaceAndPath("minecraft", "register"), buf -> {
             for (String channel : set) {
                 buf.writeBytes(channel.getBytes(StandardCharsets.US_ASCII));
                 buf.writeByte(0);
@@ -347,12 +348,12 @@ public class LeavesProtocolManager {
                         Enumeration<JarEntry> entries = jar.entries();
                         findClassesInPackageByJar(pack, entries, packageDirName, classes);
                     } catch (IOException exception) {
-                        LOGGER.warning("Failed to load jar file, " + exception.getCause() + ": " + exception.getMessage());
+                        LOGGER.warn("Failed to load jar file, {}: {}", exception.getCause(), exception.getMessage());
                     }
                 }
             }
         } catch (IOException exception) {
-            LOGGER.warning("Failed to load classes, " + exception.getCause() + ": " + exception.getMessage());
+            LOGGER.warn("Failed to load classes, {}: {}", exception.getCause(), exception.getMessage());
         }
         return classes;
     }
@@ -372,7 +373,7 @@ public class LeavesProtocolManager {
                     try {
                         classes.add(Class.forName(packageName + '.' + className));
                     } catch (ClassNotFoundException exception) {
-                        LOGGER.warning("Failed to load class " + className + ", " + exception.getCause() + ": " + exception.getMessage());
+                        LOGGER.warn("Failed to load class {}, {}: {}", className, exception.getCause(), exception.getMessage());
                     }
                 }
             }
@@ -396,7 +397,7 @@ public class LeavesProtocolManager {
                     try {
                         classes.add(Class.forName(packageName + '.' + className));
                     } catch (ClassNotFoundException exception) {
-                        LOGGER.warning("Failed to load class " + className + ", " + exception.getCause() + ": " + exception.getMessage());
+                        LOGGER.warn("Failed to load class {}, {}: {}", className, exception.getCause(), exception.getMessage());
                     }
                 }
             }

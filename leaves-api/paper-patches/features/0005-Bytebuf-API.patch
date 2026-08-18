@@ -5,47 +5,43 @@ Subject: [PATCH] Bytebuf API
 
 
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
-index 44ee8036e2f813e947c2c166e1876030cabf86ff..c25729882f87a904e59680967f3d20b02df50eae 100644
+index d0dc42bc30e81b6d7283dc1b3a42cab55fecafc7..f11dbf306e8b74352bd092093268b5117178a9fb 100644
 --- a/src/main/java/org/bukkit/Bukkit.java
 +++ b/src/main/java/org/bukkit/Bukkit.java
-@@ -3020,4 +3020,10 @@ public final class Bukkit {
+@@ -3027,4 +3027,10 @@ public final class Bukkit {
          return server.getPhotographerManager();
      }
      // Leaves end - Photographer API
 +
 +    // Leaves start - Bytebuf API
-+    public static org.leavesmc.leaves.bytebuf.BytebufManager getBytebufManager() {
-+        return server.getBytebufManager();
++    public static org.leavesmc.leaves.bytebuf.BytebufAllocator getBytebufManager() {
++        return server.getBytebufAllocator();
 +    }
 +    // Leaves end - Bytebuf API
  }
 diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
-index 74f704d4245199205afff5a992805f40a365cc81..9f9051214c81e1fc4a6f1a0b0d18ea98bdf2fe92 100644
+index 4b37b44ff78503d4a1de808f5d429605f0de289c..6e9a0f48147e855e646223fedce3908548517f3e 100644
 --- a/src/main/java/org/bukkit/Server.java
 +++ b/src/main/java/org/bukkit/Server.java
-@@ -2773,4 +2773,8 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+@@ -2789,4 +2789,8 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      // Leaves start - Photographer API
      @NotNull org.leavesmc.leaves.entity.photographer.PhotographerManager getPhotographerManager();
      // Leaves end - Photographer API
 +
 +    // Leaves start - Bytebuf API
-+    org.leavesmc.leaves.bytebuf.BytebufManager getBytebufManager();
++    org.leavesmc.leaves.bytebuf.BytebufAllocator getBytebufAllocator();
 +    // Leaves end - Bytebuf API
  }
 diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index 3eef8d533c2aa65d66fbd58f2260b4764a964ebe..73285735653a3aec90df4866b3f97f8ca38a5394 100644
+index e5947f299937a8100fd8c6b1456da9f9003c6b53..542e7f2deaacbc3a17a239154e55097111c5c4c3 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
-@@ -3931,6 +3931,12 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
-     boolean isChunkSent(long chunkKey);
-     // Paper end
+@@ -71,7 +71,7 @@ import org.jspecify.annotations.Nullable;
+  * Represents a player, connected or not
+  */
+ @NullMarked
+-public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginMessageRecipient, net.kyori.adventure.identity.Identified, net.kyori.adventure.bossbar.BossBarViewer, com.destroystokyo.paper.network.NetworkClient, ObjectContentsLike { // Paper
++public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginMessageRecipient, net.kyori.adventure.identity.Identified, net.kyori.adventure.bossbar.BossBarViewer, com.destroystokyo.paper.network.NetworkClient, ObjectContentsLike, org.leavesmc.leaves.bytebuf.PacketAudience { // Paper // Leaves - Bytbuf API
  
-+    // Leaves start - Bytebuf API
-+    void sendPacket(org.leavesmc.leaves.bytebuf.packet.Packet packet);
-+
-+    void sendPacket(org.leavesmc.leaves.bytebuf.Bytebuf buf, org.leavesmc.leaves.bytebuf.packet.PacketType type);
-+    // Leaves end - Bytebuf API
-+
+     // Paper start
      @Override
-     Spigot spigot();
-     // Spigot end

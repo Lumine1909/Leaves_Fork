@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: violetc <58360096+s-yh-china@users.noreply.github.com>
+Date: Sun, 6 Apr 2025 10:42:46 +0800
+Subject: [PATCH] Fix SculkCatalyst exp skip
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 15ac06545141c626f6ea1c967e2f85f361d773e9..c5f49363df4f2a9e620b8fb8d7c6ef5f80022ee1 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -968,7 +968,7 @@ public class CraftEventFactory {
+     public static EntityDeathEvent callEntityDeathEvent(ServerLevel level, net.minecraft.world.entity.LivingEntity victim, DamageSource damageSource, List<Entity.DefaultDrop> drops, boolean delayedDrops) { // Paper - Restore vanilla drops behavior
+         CraftLivingEntity entity = (CraftLivingEntity) victim.getBukkitEntity();
+         CraftDamageSource bukkitDamageSource = new CraftDamageSource(damageSource);
+-        EntityDeathEvent event = new EntityDeathEvent(entity, bukkitDamageSource, new io.papermc.paper.util.TransformingRandomAccessList<>(drops, Entity.DefaultDrop::stack, FROM_FUNCTION), victim.getExpReward(level, damageSource.getEntity())); // Paper - Restore vanilla drops behavior
++        EntityDeathEvent event = new EntityDeathEvent(entity, bukkitDamageSource, new io.papermc.paper.util.TransformingRandomAccessList<>(drops, Entity.DefaultDrop::stack, FROM_FUNCTION), victim.getExpReward(level, damageSource.getEntity()), victim.getExperienceReward(level, damageSource.getEntity())); // Paper - Restore vanilla drops behavior // Leaves - exp fix
+         populateFields(victim, event); // Paper - make cancellable
+         event.callEvent();
+ 
+@@ -978,6 +978,7 @@ public class CraftEventFactory {
+ 
+         playDeathSound(victim, event, damageSource);
+         victim.expToDrop = event.getDroppedExp();
++        victim.expToReward = event.getRewardExp(); // Leaves - exp fix
+ 
+         Runnable dropAll = () -> {
+             dropAllItems(drops, item -> victim.spawnAtLocation(level, item));
+@@ -1025,6 +1026,7 @@ public class CraftEventFactory {
+         victim.newLevel = event.getNewLevel();
+         victim.newTotalExp = event.getNewTotalExp();
+         victim.expToDrop = event.getDroppedExp();
++        victim.expToReward = event.getRewardExp(); // Leaves - exp fix
+         victim.newExp = event.getNewExp();
+ 
+         dropAllItems(drops, item -> victim.drop(item, true, false));

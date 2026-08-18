@@ -78,13 +78,13 @@ public final class LeavesConfig {
                     throw new IOException("Can't create file");
                 }
             } catch (final Exception ex) {
-                LeavesLogger.LOGGER.severe("Failure to create leaves config", ex);
+                LeavesLogger.LOGGER.error("Failure to create leaves config", ex);
             }
         } else {
             try {
                 config.load(file);
             } catch (final Exception ex) {
-                LeavesLogger.LOGGER.severe("Failure to load leaves config", ex);
+                LeavesLogger.LOGGER.error("Failure to load leaves config", ex);
                 throw new RuntimeException(ex);
             }
         }
@@ -104,7 +104,7 @@ public final class LeavesConfig {
         try {
             config.load(LeavesConfig.configFile);
         } catch (final Exception ex) {
-            LeavesLogger.LOGGER.severe("Failure to reload leaves config", ex);
+            LeavesLogger.LOGGER.error("Failure to reload leaves config", ex);
             throw new RuntimeException(ex);
         }
 
@@ -115,7 +115,7 @@ public final class LeavesConfig {
         try {
             config.save(LeavesConfig.configFile);
         } catch (final Exception ex) {
-            LeavesLogger.LOGGER.severe("Unable to save leaves config", ex);
+            LeavesLogger.LOGGER.error("Unable to save leaves config", ex);
         }
     }
 
@@ -337,9 +337,6 @@ public final class LeavesConfig {
                 }
             }
 
-            @GlobalConfig("allow-grindstone-overstacking")
-            public boolean allowGrindstoneOverstacking = false;
-
             @GlobalConfig("allow-entity-portal-with-passenger")
             public boolean allowEntityPortalWithPassenger = true;
 
@@ -426,6 +423,9 @@ public final class LeavesConfig {
 
             @GlobalConfig("old-minecart-motion-behavior")
             public boolean oldMinecartMotionBehavior = false;
+
+            @GlobalConfig("allow-inf-nan-motion-values")
+            public boolean allowInfNanMotionValues = true;
         }
 
         public ElytraAeronauticsConfig elytraAeronautics = new ElytraAeronauticsConfig();
@@ -510,35 +510,21 @@ public final class LeavesConfig {
 
                 @Override
                 public Integer loadConvert(Object value) throws IllegalArgumentException {
-                    switch (value) {
-                        case String stringValue -> {
-                            if (stringValue.equals("true")) {
-                                return 2;
-                            } else if (!MathUtils.isNumeric(stringValue)) {
-                                return 1;
-                            } else {
-                                return Integer.parseInt(stringValue);
-                            }
-                        }
-                        case Integer integerValue -> {
-                            return integerValue;
-                        }
-                        case Boolean boolValue -> {
-                            return boolValue ? 2 : 1;
-                        }
+                    return switch (value) {
+                        case String stringValue -> stringValue.equals("true") ? 2
+                            : !MathUtils.isNumeric(stringValue) ? 1
+                            : Integer.parseInt(stringValue);
+                        case Integer integerValue -> integerValue;
+                        case Boolean boolValue -> boolValue ? 2 : 1;
                         case null, default -> throw new IllegalArgumentException("stackable-shulker-boxes need string or integer or boolean");
-                    }
+                    };
                 }
 
                 @Override
                 public Object saveConvert(Integer value) {
-                    if (value == 1) {
-                        return false;
-                    } else if (value == 2) {
-                        return true;
-                    } else {
-                        return value;
-                    }
+                    return value == 1 ? false
+                        : value == 2 ? true
+                        : value;
                 }
 
                 @Override
@@ -548,8 +534,8 @@ public final class LeavesConfig {
 
                 @Override
                 public void verify(Integer old, Integer value) throws IllegalArgumentException {
-                    if (value < 1 || value > 64) {
-                        throw new IllegalArgumentException("stackable-shulker-boxes need >= 1 and <= 64");
+                    if (value < 1 || value > 99) {
+                        throw new IllegalArgumentException("stackable-shulker-boxes need >= 1 and <= 99");
                     }
                 }
 
@@ -609,6 +595,9 @@ public final class LeavesConfig {
 
         @GlobalConfig("fix-update-suppression-crash")
         public boolean updateSuppressionCrashFix = true;
+
+        @GlobalConfig("fix-stuck-zombified-piglin-anger-target")
+        public boolean fixStuckZombifiedPiglinAngerTarget = false;
 
         @GlobalConfig(value = "bedrock-break-list", lock = true)
         public boolean bedrockBreakList = false;
@@ -817,9 +806,6 @@ public final class LeavesConfig {
         @GlobalConfig("enable-suffocation-optimization")
         public boolean enableSuffocationOptimization = true;
 
-        @GlobalConfig("check-spooky-season-once-an-hour")
-        public boolean checkSpookySeasonOnceAnHour = true;
-
         @GlobalConfig("inactive-goal-selector-disable")
         public boolean throttleInactiveGoalSelectorTick = false;
 
@@ -876,6 +862,9 @@ public final class LeavesConfig {
 
     @GlobalConfigCategory("protocol")
     public static class ProtocolConfig {
+
+        @GlobalConfig("strict-mode")
+        public boolean strictMode = false;
 
         public BladerenConfig bladeren = new BladerenConfig();
 
@@ -1089,6 +1078,31 @@ public final class LeavesConfig {
     @GlobalConfigCategory("misc")
     public static class MiscConfig {
 
+        public AsyncKeepaliveConfig asyncKeepalive = new AsyncKeepaliveConfig();
+
+        @GlobalConfigCategory("async-keepalive")
+        public static class AsyncKeepaliveConfig {
+
+            @GlobalConfig(value = "enable", lock = true)
+            public boolean enable = false;
+
+            @GlobalConfig(value = "timeout-seconds", lock = true, validator = TimeoutSecondsValidator.class)
+            public int timeoutSeconds = 20;
+
+            public long getTimeoutMillis() {
+                return this.timeoutSeconds * 1000L;
+            }
+
+            private static class TimeoutSecondsValidator extends IntConfigValidator {
+                @Override
+                public void verify(Integer old, Integer value) throws IllegalArgumentException {
+                    if (value <= 0) {
+                        throw new IllegalArgumentException("timeout-seconds need > 0");
+                    }
+                }
+            }
+        }
+
         public AutoUpdateConfig autoUpdate = new AutoUpdateConfig();
 
         @GlobalConfigCategory("auto-update")
@@ -1102,7 +1116,7 @@ public final class LeavesConfig {
                     if (!reload) {
                         LeavesUpdateHelper.init();
                         if (value) {
-                            LeavesLogger.LOGGER.warning("Auto-Update is not completely safe. Enabling it may cause data security problems!");
+                            LeavesLogger.LOGGER.warn("Auto-Update is not completely safe. Enabling it may cause data security problems!");
                         }
                     }
                 }
@@ -1138,7 +1152,7 @@ public final class LeavesConfig {
                 @Override
                 public void verify(Boolean old, Boolean value) throws IllegalArgumentException {
                     if (value) {
-                        LeavesLogger.LOGGER.warning("extra-yggdrasil-service is an unofficial support. Enabling it may cause data security problems!");
+                        LeavesLogger.LOGGER.warn("extra-yggdrasil-service is an unofficial support. Enabling it may cause data security problems!");
                         GlobalConfiguration.get().unsupportedSettings.performUsernameValidation = true; // always check username
                     }
                 }
@@ -1203,9 +1217,6 @@ public final class LeavesConfig {
 
         @GlobalConfig("leaves-packet-event")
         public boolean leavesPacketEvent = false;
-
-        @GlobalConfig("chat-command-max-length")
-        public int chatCommandMaxLength = 32767;
     }
 
     public static RegionConfig region = new RegionConfig();
@@ -1244,6 +1255,15 @@ public final class LeavesConfig {
 
             @GlobalConfig(value = "flush-delay-ms", lock = true)
             public int flushDelayMs = 100;
+
+            @GlobalConfig(value = "region-unload-idle-ms", lock = true)
+            public int regionUnloadIdleMs = 600000;
+
+            @GlobalConfig(value = "region-unload-check-interval-ms", lock = true)
+            public int regionUnloadCheckIntervalMs = 30000;
+
+            @GlobalConfig(value = "max-flush-per-run", lock = true)
+            public int maxFlushPerRun = 256;
 
             @GlobalConfig(value = "use-virtual-thread", lock = true)
             public boolean useVirtualThread = true;
@@ -1287,18 +1307,23 @@ public final class LeavesConfig {
         @GlobalConfig("vanilla-portal-handle")
         public boolean vanillaPortalHandle = true;
 
-        @GlobalConfig("vanilla-fluid-pushing")
-        public boolean vanillaFluidPushing = true;
-
-        @GlobalConfig(value = "collision-behavior")
-        public CollisionBehavior collisionBehavior = CollisionBehavior.BLOCK_SHAPE_VANILLA;
+        @GlobalConfig(value = "collision-behavior", validator = CollisionBehaviorValidator.class)
+        public CollisionBehavior collisionBehavior = CollisionBehavior.PAPER;
 
         public enum CollisionBehavior {
-            VANILLA, BLOCK_SHAPE_VANILLA, PAPER
+            VANILLA, PAPER
         }
 
-        @GlobalConfig("vanilla-end-void-rings")
-        public boolean vanillaEndVoidRings = false;
+        private static class CollisionBehaviorValidator extends EnumConfigValidator<CollisionBehavior> {
+            @Override
+            public CollisionBehavior stringConvert(@NotNull String value) throws IllegalArgumentException {
+                if (value.equalsIgnoreCase("BLOCK_SHAPE_VANILLA")) {
+                    LeavesLogger.LOGGER.warn("Paper has updated the collision behavior to BLOCK_SHAPE_VANILLA mode, converting this to PAPER...");
+                    value = "PAPER";
+                }
+                return super.stringConvert(value);
+            }
+        }
 
         @GlobalConfig("stacked-container-destroyed-drop")
         public boolean stackedContainerDestroyedDrop = true;

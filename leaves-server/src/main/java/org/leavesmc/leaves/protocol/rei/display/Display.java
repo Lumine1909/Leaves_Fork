@@ -12,7 +12,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.context.ContextMap;
@@ -21,14 +21,11 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.component.Fireworks;
-import net.minecraft.world.item.component.ProvidesTrimMaterial;
 import net.minecraft.world.item.crafting.FireworkRocketRecipe;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraft.world.item.crafting.MapCloningRecipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.SmithingTransformRecipe;
 import net.minecraft.world.item.crafting.SmithingTrimRecipe;
-import net.minecraft.world.item.crafting.TippedArrowRecipe;
 import net.minecraft.world.item.crafting.TransmuteRecipe;
 import net.minecraft.world.item.crafting.display.RecipeDisplay;
 import net.minecraft.world.item.crafting.display.ShapedCraftingRecipeDisplay;
@@ -56,7 +53,7 @@ import java.util.stream.Stream;
  */
 public abstract class Display {
 
-    protected ResourceLocation id;
+    protected Identifier id;
 
     protected List<EntryIngredient> inputs;
 
@@ -64,7 +61,7 @@ public abstract class Display {
 
     public Display(@NotNull List<EntryIngredient> inputs,
                    @NotNull List<EntryIngredient> outputs,
-                   @NotNull ResourceLocation id) {
+                   @NotNull Identifier id) {
         this.inputs = inputs;
         this.outputs = outputs;
         this.id = id;
@@ -81,7 +78,7 @@ public abstract class Display {
 
             @Override
             public void encode(@NotNull RegistryFriendlyByteBuf buffer, @NotNull Display display) {
-                new FriendlyByteBuf(buffer).writeResourceLocation(display.getSerializerId());
+                new FriendlyByteBuf(buffer).writeIdentifier(display.getSerializerId());
                 ((StreamCodec<RegistryFriendlyByteBuf, Display>) display.streamCodec()).encode(buffer, display);
             }
         };
@@ -94,9 +91,9 @@ public abstract class Display {
         if (!displays.isEmpty()) {
             RecipeDisplay recipeDisplay = displays.getFirst();
             if (recipeDisplay instanceof ShapelessCraftingRecipeDisplay shapelessRecipeDisplay) {
-                displayList.add(new ShapelessDisplay(shapelessRecipeDisplay, recipeHolder.id().location()));
+                displayList.add(new ShapelessDisplay(shapelessRecipeDisplay, recipeHolder.id().identifier()));
             } else if (recipeDisplay instanceof ShapedCraftingRecipeDisplay shapelessRecipe) {
-                displayList.add(new ShapedDisplay(shapelessRecipe, recipeHolder.id().location()));
+                displayList.add(new ShapedDisplay(shapelessRecipe, recipeHolder.id().identifier()));
             }
         }
         return displayList;
@@ -106,9 +103,9 @@ public abstract class Display {
      * see me.shedaniel.rei.plugin.client.categories.crafting.filler.TippedArrowRecipeFiller#apply
      */
     @NotNull
-    public static Collection<Display> ofTippedArrowRecipe(@NotNull RecipeHolder<TippedArrowRecipe> recipeHolder) {
+    public static Collection<Display> ofTippedArrowRecipe(@NotNull RecipeHolder<?> recipeHolder) {
         EntryIngredient arrowIngredient = EntryIngredient.of(Items.ARROW);
-        Set<ResourceLocation> registeredPotions = new HashSet<>();
+        Set<Identifier> registeredPotions = new HashSet<>();
         List<Display> displays = new ArrayList<>();
         MinecraftServer.getServer().registryAccess().lookup(Registries.POTION).stream()
             .flatMap(Registry::listElements)
@@ -118,7 +115,7 @@ public abstract class Display {
                 if (potion == null || potion.potion().isEmpty()) {
                     return;
                 }
-                if (potion.potion().get().unwrapKey().isPresent() && registeredPotions.add(potion.potion().get().unwrapKey().get().location())) {
+                if (potion.potion().get().unwrapKey().isPresent() && registeredPotions.add(potion.potion().get().unwrapKey().get().identifier())) {
                     List<EntryIngredient> input = new ArrayList<>();
                     for (int i = 0; i < 4; i++) {
                         input.add(arrowIngredient);
@@ -129,7 +126,7 @@ public abstract class Display {
                     }
                     ItemStack outputStack = new ItemStack(Items.TIPPED_ARROW, 8);
                     outputStack.set(DataComponents.POTION_CONTENTS, potion);
-                    displays.add(new CustomDisplay(input, List.of(EntryIngredient.of(outputStack)), recipeHolder.id().location()));
+                    displays.add(new CustomDisplay(input, List.of(EntryIngredient.of(outputStack)), recipeHolder.id().identifier()));
                 }
             });
         return displays;
@@ -150,19 +147,19 @@ public abstract class Display {
             outputs[i] = new ItemStack(Items.FIREWORK_ROCKET, 3);
             outputs[i].set(DataComponents.FIREWORKS, new Fireworks(i + 1, List.of()));
         }
-        return Collections.singleton(new ShapelessDisplay(List.of(inputs), List.of(EntryIngredient.of(outputs)), recipeHolder.id().location()));
+        return Collections.singleton(new ShapelessDisplay(List.of(inputs), List.of(EntryIngredient.of(outputs)), recipeHolder.id().identifier()));
     }
 
     /**
      * see me.shedaniel.rei.plugin.client.categories.crafting.filler.MapCloningRecipeFiller#apply
      */
     @NotNull
-    public static Collection<Display> ofMapCloningRecipe(@NotNull RecipeHolder<MapCloningRecipe> recipeHolder) {
+    public static Collection<Display> ofMapCloningRecipe(@NotNull RecipeHolder<?> recipeHolder) {
         return Collections.singleton(
             new ShapelessDisplay(
                 List.of(EntryIngredient.of(Items.FILLED_MAP), EntryIngredient.of(Items.MAP)),
                 List.of(EntryIngredient.of(new ItemStack(Items.FILLED_MAP, 2))),
-                recipeHolder.id().location())
+                recipeHolder.id().identifier())
         );
     }
 
@@ -179,7 +176,7 @@ public abstract class Display {
             ),
             List.of(ofSlotDisplay(recipeHolder.value().getResult())),
             SmithingDisplay.SmithingRecipeType.TRANSFORM,
-            recipeHolder.id().location()
+            recipeHolder.id().identifier()
         );
     }
 
@@ -203,22 +200,22 @@ public abstract class Display {
                 recipe.templateIngredient().map(EntryIngredient::ofIngredient).orElse(EntryIngredient.empty()),
                 baseIngredient,
                 EntryIngredient.ofItemHolder(additionStack)
-            ), List.of(baseIngredient), SmithingDisplay.SmithingRecipeType.TRIM, recipeHolder.id().location(), recipe.pattern()));
+            ), List.of(baseIngredient), SmithingDisplay.SmithingRecipeType.TRIM, recipeHolder.id().identifier(), recipe.pattern()));
 
         }
         return displays;
     }
 
     private static Optional<Holder<TrimMaterial>> getMaterialFromIngredient(HolderLookup.Provider provider, Holder<Item> item) {
-        ProvidesTrimMaterial providesTrimMaterial = new ItemStack(item).get(DataComponents.PROVIDES_TRIM_MATERIAL);
-        return providesTrimMaterial != null ? providesTrimMaterial.unwrap(provider) : Optional.empty();
+        Holder<TrimMaterial> providesTrimMaterial = new ItemStack(item).get(DataComponents.PROVIDES_TRIM_MATERIAL);
+        return providesTrimMaterial != null ? Optional.of(providesTrimMaterial) : Optional.empty();
     }
 
     public static EntryIngredient ofSlotDisplay(SlotDisplay slot) {
         return switch (slot) {
             case SlotDisplay.Empty ignored -> EntryIngredient.empty();
             case SlotDisplay.ItemSlotDisplay s -> EntryIngredient.of(s.item().value());
-            case SlotDisplay.ItemStackSlotDisplay s -> EntryIngredient.of(s.stack());
+            case SlotDisplay.ItemStackSlotDisplay s -> EntryIngredient.of(s.stack().create());
             case SlotDisplay.TagSlotDisplay s -> ofItemTag(s.tag());
             case SlotDisplay.Composite s -> {
                 ArrayList<ItemStack> list = new ArrayList<>();
@@ -288,15 +285,15 @@ public abstract class Display {
         return outputs;
     }
 
-    public ResourceLocation getDisplayLocation() {
+    public Identifier getDisplayLocation() {
         return id;
     }
 
-    public Optional<ResourceLocation> getOptionalLocation() {
+    public Optional<Identifier> getOptionalLocation() {
         return Optional.ofNullable(id);
     }
 
-    public abstract ResourceLocation getSerializerId();
+    public abstract Identifier getSerializerId();
 
     public abstract StreamCodec<RegistryFriendlyByteBuf, ? extends Display> streamCodec();
 }

@@ -1,0 +1,88 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: HyacinthHaru <122684177+HyacinthHaru@users.noreply.github.com>
+Date: Sat, 13 Jun 2026 21:45:53 +0800
+Subject: [PATCH] 26.2 API adaptations
+
+26.2 dropped several access transformers that Leaves relied on. This patch
+re-widens those vanilla field declarations (Leaves' AT mechanism). The
+mechanical EntityType->EntityTypes / knockback / login-packet adaptations that
+used to live here have been folded back into their owning feature patches.
+
+diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
+index 63ef80d4072eba61eb179e881952814f9243c1d8..419073183d7a6d94a4d250e9f9a0c997449fbe83 100644
+--- a/net/minecraft/server/level/ChunkMap.java
++++ b/net/minecraft/server/level/ChunkMap.java
+@@ -983,7 +983,7 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+         return this.entityMap.containsKey(id);
+     }
+ 
+-    protected void addEntity(final Entity entity) {
++    public void addEntity(final Entity entity) { // Leaves - 26.2 dropped AT
+         org.spigotmc.AsyncCatcher.catchOp("entity track"); // Spigot
+         // Paper start - ignore and warn about illegal addEntity calls instead of crashing server
+         if (!entity.valid || entity.level() != this.level || this.entityMap.containsKey(entity.getId())) {
+diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
+index 1c617584d447aace2534a3c32c003e2d855feb17..67c3b81f9a7190529a0efdc8d880695ff4a93e9d 100644
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -193,7 +193,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+     private static final int MAX_SCHEDULED_TICKS_PER_TICK = 65536;
+     private static final AtomicInteger ENTITY_COUNTER = new AtomicInteger();
+     private final List<ServerPlayer> players = Lists.newArrayList();
+-    private final ServerChunkCache chunkSource;
++    public final ServerChunkCache chunkSource; // Leaves - 26.2 dropped AT
+     private final MinecraftServer server;
+     public final io.papermc.paper.world.saveddata.PaperLevelOverrides serverLevelData; // Paper - type
+     private final EntityTickList entityTickList = new EntityTickList();
+diff --git a/net/minecraft/server/level/ServerPlayer.java b/net/minecraft/server/level/ServerPlayer.java
+index 6f15063b55cc51cf8e4036fd4a2fdf607c8ee6fe..ec64e5db6b5eaecd2eb46d00b34c0894d5f08d76 100644
+--- a/net/minecraft/server/level/ServerPlayer.java
++++ b/net/minecraft/server/level/ServerPlayer.java
+@@ -251,7 +251,7 @@ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patc
+     private boolean canChatColor = true;
+     private long lastActionTime = Util.getMillis();
+     private @Nullable Entity camera;
+-    private boolean isChangingDimension;
++    public boolean isChangingDimension; // Leaves - 26.2 dropped AT
+     public boolean seenCredits = false;
+     protected ServerRecipeBook recipeBook; // Leaves - not final and private -> protected
+     private @Nullable Vec3 levitationStartPos;
+diff --git a/net/minecraft/world/entity/monster/Creeper.java b/net/minecraft/world/entity/monster/Creeper.java
+index 4a90294f8d8447bb2f2cef7572119274a1a2c62e..3e2e0d21188f0ecdd32887d52108ef3681b5ce9a 100644
+--- a/net/minecraft/world/entity/monster/Creeper.java
++++ b/net/minecraft/world/entity/monster/Creeper.java
+@@ -54,7 +54,7 @@ public class Creeper extends Monster {
+     public int swell;
+     public int maxSwell = 30;
+     public int explosionRadius = 3;
+-    private boolean droppedSkulls;
++    public boolean droppedSkulls; // Leaves - 26.2 dropped AT
+     public @Nullable Entity entityIgniter; // CraftBukkit
+ 
+     public Creeper(final EntityType<? extends Creeper> type, final Level level) {
+diff --git a/net/minecraft/world/entity/player/Player.java b/net/minecraft/world/entity/player/Player.java
+index 8e52d28878572c326ebdcf3e114a87115c059de0..2b7ab3c652e75a6996391cb0aa9b928c3900aa9e 100644
+--- a/net/minecraft/world/entity/player/Player.java
++++ b/net/minecraft/world/entity/player/Player.java
+@@ -156,7 +156,7 @@ public abstract class Player extends Avatar implements ContainerUser {
+     protected FoodData foodData = new FoodData();
+     protected int jumpTriggerTime;
+     public int takeXpDelay;
+-    private int sleepCounter = 0;
++    public int sleepCounter = 0; // Leaves - 26.2 dropped AT
+     protected boolean wasUnderwater;
+     private final Abilities abilities = new Abilities();
+     public int experienceLevel = 0;
+diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
+index 0e2848df38cb6860bd9b7f1b9f97bcab72d967ae..19feadf922c7bef1d4891e8bf3e2fde90eabb8d6 100644
+--- a/net/minecraft/world/level/Level.java
++++ b/net/minecraft/world/level/Level.java
+@@ -136,7 +136,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+     @Deprecated
+     private final RandomSource soundSeedGenerator = RandomSource.createThreadSafe();
+     private final Holder<DimensionType> dimensionTypeRegistration;
+-    protected final WritableLevelData levelData;
++    public final WritableLevelData levelData; // Leaves - 26.2 dropped AT
+     private final boolean isClientSide;
+     private final BiomeManager biomeManager;
+     private final ResourceKey<Level> dimension;

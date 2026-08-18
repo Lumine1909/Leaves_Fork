@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Fortern <blueten.ki@gmail.com>
+Date: Sat, 20 Jan 2024 02:50:56 +0800
+Subject: [PATCH] Placing locked hopper no longer send NC updates
+
+
+diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
+index d17c0f454d7491c92b69aa97b4562c2ce8530313..2dd8fc958c72774b1488e01604167af4b66a1027 100644
+--- a/net/minecraft/world/level/Level.java
++++ b/net/minecraft/world/level/Level.java
+@@ -1180,7 +1180,11 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+             }
+ 
+             if ((updateFlags & Block.UPDATE_NEIGHBORS) != 0) {
+-                this.updateNeighborsAt(pos, oldState.getBlock());
++                // Leaves start - Placing locked hopper doesn't send NC updates.
++                if (!(blockState.getBlock() instanceof net.minecraft.world.level.block.HopperBlock) || blockState.getValue(net.minecraft.world.level.block.HopperBlock.ENABLED)) {
++                    this.updateNeighborsAt(pos, oldState.getBlock());
++                }
++                // Leaves end - Placing locked hopper doesn't send NC updates.
+                 if (!this.isClientSide() && blockState.hasAnalogOutputSignal()) {
+                     this.updateNeighbourForOutputSignal(pos, blockState.getBlock());
+                 }

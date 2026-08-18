@@ -13,22 +13,22 @@ import static java.util.Map.entry;
 
 public class WoolUtils {
     private static final Map<Block, DyeColor> WOOL_BLOCK_TO_DYE = Map.ofEntries(
-        entry(Blocks.WHITE_WOOL, DyeColor.WHITE),
-        entry(Blocks.ORANGE_WOOL, DyeColor.ORANGE),
-        entry(Blocks.MAGENTA_WOOL, DyeColor.MAGENTA),
-        entry(Blocks.LIGHT_BLUE_WOOL, DyeColor.LIGHT_BLUE),
-        entry(Blocks.YELLOW_WOOL, DyeColor.YELLOW),
-        entry(Blocks.LIME_WOOL, DyeColor.LIME),
-        entry(Blocks.PINK_WOOL, DyeColor.PINK),
-        entry(Blocks.GRAY_WOOL, DyeColor.GRAY),
-        entry(Blocks.LIGHT_GRAY_WOOL, DyeColor.LIGHT_GRAY),
-        entry(Blocks.CYAN_WOOL, DyeColor.CYAN),
-        entry(Blocks.PURPLE_WOOL, DyeColor.PURPLE),
-        entry(Blocks.BLUE_WOOL, DyeColor.BLUE),
-        entry(Blocks.BROWN_WOOL, DyeColor.BROWN),
-        entry(Blocks.GREEN_WOOL, DyeColor.GREEN),
-        entry(Blocks.RED_WOOL, DyeColor.RED),
-        entry(Blocks.BLACK_WOOL, DyeColor.BLACK)
+        entry(Blocks.WOOL.pick(DyeColor.WHITE), DyeColor.WHITE),
+        entry(Blocks.WOOL.pick(DyeColor.ORANGE), DyeColor.ORANGE),
+        entry(Blocks.WOOL.pick(DyeColor.MAGENTA), DyeColor.MAGENTA),
+        entry(Blocks.WOOL.pick(DyeColor.LIGHT_BLUE), DyeColor.LIGHT_BLUE),
+        entry(Blocks.WOOL.pick(DyeColor.YELLOW), DyeColor.YELLOW),
+        entry(Blocks.WOOL.pick(DyeColor.LIME), DyeColor.LIME),
+        entry(Blocks.WOOL.pick(DyeColor.PINK), DyeColor.PINK),
+        entry(Blocks.WOOL.pick(DyeColor.GRAY), DyeColor.GRAY),
+        entry(Blocks.WOOL.pick(DyeColor.LIGHT_GRAY), DyeColor.LIGHT_GRAY),
+        entry(Blocks.WOOL.pick(DyeColor.CYAN), DyeColor.CYAN),
+        entry(Blocks.WOOL.pick(DyeColor.PURPLE), DyeColor.PURPLE),
+        entry(Blocks.WOOL.pick(DyeColor.BLUE), DyeColor.BLUE),
+        entry(Blocks.WOOL.pick(DyeColor.BROWN), DyeColor.BROWN),
+        entry(Blocks.WOOL.pick(DyeColor.GREEN), DyeColor.GREEN),
+        entry(Blocks.WOOL.pick(DyeColor.RED), DyeColor.RED),
+        entry(Blocks.WOOL.pick(DyeColor.BLACK), DyeColor.BLACK)
     );
 
     public static DyeColor getWoolColorAtPosition(Level worldIn, BlockPos pos) {

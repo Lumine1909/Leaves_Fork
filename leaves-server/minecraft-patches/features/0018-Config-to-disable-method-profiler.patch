@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: violetc <58360096+s-yh-china@users.noreply.github.com>
+Date: Mon, 15 Aug 2022 10:18:36 +0800
+Subject: [PATCH] Config to disable method profiler
+
+This patch is Powered by Pufferfish(https://github.com/pufferfish-gg/Pufferfish)
+
+diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
+index c7d0fe28fe0aa8fb04711b79d7ecfffa8b2b1308..64dab479c71519c7ee746091a344e17b97b73cda 100644
+--- a/net/minecraft/server/MinecraftServer.java
++++ b/net/minecraft/server/MinecraftServer.java
+@@ -1348,7 +1348,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
+                 // Paper - improve tick loop - done above
+ 
+-                try (Profiler.Scope ignored = Profiler.use(this.createProfiler())) {
++                try (Profiler.Scope ignored = org.leavesmc.leaves.LeavesConfig.mics.disableMethodProfiler ? null : Profiler.use(this.createProfiler())) { // Leaves - disable profiler
+                     this.processPacketsAndTick(sprinting);
+                     ProfilerFiller profiler = Profiler.get();
+                     profiler.push("nextTickWait");
+diff --git a/net/minecraft/util/profiling/Profiler.java b/net/minecraft/util/profiling/Profiler.java
+index ee9794784a53cbe4ec02ec4ad94923ce8381b5dd..2f6f5075a04d9f2562e75f0099e72ce0acb7ce72 100644
+--- a/net/minecraft/util/profiling/Profiler.java
++++ b/net/minecraft/util/profiling/Profiler.java
+@@ -45,6 +45,7 @@ public final class Profiler {
+     }
+ 
+     public static ProfilerFiller get() {
++        if (org.leavesmc.leaves.LeavesConfig.mics.disableMethodProfiler) return InactiveProfiler.INSTANCE; // Leaves - disable profiler
+         return ACTIVE_COUNT.get() == 0 ? getDefaultFiller() : Objects.requireNonNullElseGet(ACTIVE.get(), Profiler::getDefaultFiller);
+     }
+ 

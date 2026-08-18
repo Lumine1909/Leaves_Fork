@@ -1,0 +1,20 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: violetc <58360096+s-yh-china@users.noreply.github.com>
+Date: Thu, 20 Jul 2023 21:30:17 +0800
+Subject: [PATCH] Skip cloning advancement criteria
+
+This patch is Powered by Gale(https://github.com/GaleMC/Gale)
+
+diff --git a/net/minecraft/advancements/Advancement.java b/net/minecraft/advancements/Advancement.java
+index 5a4c58bfd3708f505901f5b9fb316a1c0d7a36ac..4db8438d23e5fb38937c3cc8ea1acb32ea07d90e 100644
+--- a/net/minecraft/advancements/Advancement.java
++++ b/net/minecraft/advancements/Advancement.java
+@@ -62,7 +62,7 @@ public record Advancement(
+         final AdvancementRequirements requirements,
+         final boolean sendsTelemetryEvent
+     ) {
+-        this(parent, display, rewards, Map.copyOf(criteria), requirements, sendsTelemetryEvent, display.map(Advancement::decorateName));
++        this(parent, display, rewards, !org.leavesmc.leaves.LeavesConfig.performance.skipCloningAdvancementCriteria ? Map.copyOf(criteria) : criteria, requirements, sendsTelemetryEvent, display.map(Advancement::decorateName)); // Leaves - skip cloning advancement criteria
+     }
+ 
+     private static DataResult<Advancement> validate(final Advancement advancement) {

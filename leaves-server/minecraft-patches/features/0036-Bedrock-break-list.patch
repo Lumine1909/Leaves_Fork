@@ -1,0 +1,82 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: violetc <58360096+s-yh-china@users.noreply.github.com>
+Date: Wed, 8 May 2024 22:19:25 +0800
+Subject: [PATCH] Bedrock break list
+
+
+diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
+index 2b046aef19b24b96f86511f6b46398012a87b028..68aeab0895b236e9bd94f00992530d8704acd615 100644
+--- a/net/minecraft/server/MinecraftServer.java
++++ b/net/minecraft/server/MinecraftServer.java
+@@ -1862,6 +1862,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
+         org.leavesmc.leaves.protocol.core.LeavesProtocolManager.handleTick(this.tickCount); // Leaves - protocol
+ 
++        org.leavesmc.leaves.util.BreakBedrockList.endTick(); // Leaves - break bedrock list
++
+         for (Runnable tickable : this.tickables) {
+             tickable.run();
+         }
+diff --git a/net/minecraft/server/ServerScoreboard.java b/net/minecraft/server/ServerScoreboard.java
+index 7ffd683c42557052d7bfa963d87e68f4e8f62d6c..62b2940e02ad5b3c515934dc5b1d0eaedce84d69 100644
+--- a/net/minecraft/server/ServerScoreboard.java
++++ b/net/minecraft/server/ServerScoreboard.java
+@@ -164,6 +164,7 @@ public class ServerScoreboard extends Scoreboard {
+     @Override
+     public void onObjectiveAdded(final Objective objective) {
+         super.onObjectiveAdded(objective);
++        org.leavesmc.leaves.util.BreakBedrockList.onScoreboardAdd(objective); // Leaves - break bedrock list
+         this.setDirty();
+     }
+ 
+@@ -180,6 +181,7 @@ public class ServerScoreboard extends Scoreboard {
+     @Override
+     public void onObjectiveRemoved(final Objective objective) {
+         super.onObjectiveRemoved(objective);
++        org.leavesmc.leaves.util.BreakBedrockList.onScoreboardRemove(objective); // Leaves - break bedrock list
+         if (this.trackedObjectives.contains(objective)) {
+             this.stopTrackingObjective(objective);
+         }
+diff --git a/net/minecraft/world/level/block/piston/PistonBaseBlock.java b/net/minecraft/world/level/block/piston/PistonBaseBlock.java
+index c02394b5ea59c9f3b5d2b4f40b4f69d701698aed..86f4ac71b1732dfc0ea180e1c3b2862d09029151 100644
+--- a/net/minecraft/world/level/block/piston/PistonBaseBlock.java
++++ b/net/minecraft/world/level/block/piston/PistonBaseBlock.java
+@@ -75,6 +75,11 @@ public class PistonBaseBlock extends DirectionalBlock {
+     @Override
+     public void setPlacedBy(final Level level, final BlockPos pos, final BlockState state, final @Nullable LivingEntity by, final ItemStack itemStack) {
+         if (!level.isClientSide()) {
++            // Leaves start - break bedrock list
++            if (by instanceof net.minecraft.world.entity.player.Player player) {
++                org.leavesmc.leaves.util.BreakBedrockList.onPlayerPlacePiston(level, player, pos);
++            }
++            // Leaves end - break bedrock list
+             this.checkIfExtend(level, pos, state);
+         }
+     }
+@@ -228,7 +233,13 @@ public class PistonBaseBlock extends DirectionalBlock {
+                             }
+                         }
+                         // Paper end - Fix sticky pistons and BlockPistonRetractEvent
+-                        level.removeBlock(pos.relative(direction), false);
++                        // Leaves start - break bedrock list
++                        BlockPos bedrockBreakPos = pos.relative(direction);
++                        if (level.getBlockState(bedrockBreakPos).getBlock() == Blocks.BEDROCK) {
++                            org.leavesmc.leaves.util.BreakBedrockList.onPistonBreakBedrock(level, bedrockBreakPos);
++                        }
++                        level.removeBlock(bedrockBreakPos, false);
++                        // Leaves end - break bedrock list
+                     } else {
+                         this.moveBlocks(level, pos, direction, false);
+                     }
+@@ -237,6 +248,11 @@ public class PistonBaseBlock extends DirectionalBlock {
+                 // Paper start - Protect Bedrock and End Portal/Frames from being destroyed; fix headless pistons breaking blocks
+                 BlockPos headPos = pos.relative(direction);
+                 if (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.allowPermanentBlockBreakExploits || level.getBlockState(headPos) == Blocks.PISTON_HEAD.defaultBlockState().setValue(FACING, direction)) { // double check to make sure we're not a headless piston
++                    // Leaves start - break bedrock list
++                    if (level.getBlockState(headPos).getBlock() == Blocks.BEDROCK) {
++                        org.leavesmc.leaves.util.BreakBedrockList.onPistonBreakBedrock(level, headPos);
++                    }
++                    // Leaves end - break bedrock list
+                     level.removeBlock(headPos, false);
+                 } else {
+                     ((ServerLevel) level).getChunkSource().blockChanged(headPos); // ... fix client desync
