@@ -12,7 +12,7 @@ As part of: Lithium (https://github.com/CaffeineMC/lithium)
 Licensed under: LGPL-3.0 (https://www.gnu.org/licenses/lgpl-3.0.html)
 
 diff --git a/net/minecraft/world/entity/ai/goal/MoveToBlockGoal.java b/net/minecraft/world/entity/ai/goal/MoveToBlockGoal.java
-index c6e9b155c2341c13d569f28f54f0c1d2d7313676..33edd6fc8d8e6928d6d70f09d26c92751e2b3297 100644
+index c6e9b155c2341c13d569f28f54f0c1d2d7313676..4584bcc996d0af97952e1e986df259b803869825 100644
 --- a/net/minecraft/world/entity/ai/goal/MoveToBlockGoal.java
 +++ b/net/minecraft/world/entity/ai/goal/MoveToBlockGoal.java
 @@ -5,7 +5,7 @@ import net.minecraft.core.BlockPos;
@@ -24,7 +24,7 @@ index c6e9b155c2341c13d569f28f54f0c1d2d7313676..33edd6fc8d8e6928d6d70f09d26c9275
      private static final int GIVE_UP_TICKS = 1200;
      private static final int STAY_TICKS = 1200;
      private static final int INTERVAL_TICKS = 200;
-@@ -133,4 +133,171 @@ public abstract class MoveToBlockGoal extends Goal {
+@@ -133,4 +133,172 @@ public abstract class MoveToBlockGoal extends Goal {
      }
  
      protected abstract boolean isValidTarget(LevelReader level, BlockPos pos);
@@ -90,6 +90,7 @@ index c6e9b155c2341c13d569f28f54f0c1d2d7313676..33edd6fc8d8e6928d6d70f09d26c9275
 +                            // ChunkAccess is always loaded at this point
 +                            net.minecraft.world.level.chunk.ChunkAccess chunkAccess = checker.getCachedChunkAccess(currentPos);
 +                            if (lithium$isValidTarget.test(chunkAccess, currentPos)) {
++                                this.mob.movingTarget = currentPos == BlockPos.ZERO ? null : currentPos.immutable(); // Paper
 +                                this.blockPos = currentPos;
 +                                return true;
 +                            }
